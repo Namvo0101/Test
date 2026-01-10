@@ -81,7 +81,8 @@
       <th><input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)"></th>
       <th><input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
     </tr>
-    <!-- vẫn giữ trong DOM để tính total/export excel, chỉ ẩn bằng CSS -->
+
+    <!-- vẫn giữ để tính/export, chỉ ẩn bằng CSS -->
     <tr>
       <td></td>
       <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
@@ -261,7 +262,6 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  // ===== Export Excel: tắt gridlines chắc chắn + footer không còn gridline =====
   function exportExcel() {
     if (!window.XLSX) {
       alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
@@ -271,7 +271,6 @@
     completeScores();
 
     var table = document.getElementById("scoreTable");
-
     function getPlayerName(i) {
       var cell = table.rows[0] && table.rows[0].cells[i + 1];
       if (!cell) return "";
@@ -279,21 +278,19 @@
       var v = inp ? inp.value : (cell.textContent || "");
       return (v || "").toString().trim();
     }
-
     var names = [getPlayerName(0), getPlayerName(1), getPlayerName(2), getPlayerName(3)];
 
-    // AOA 5 cột: A..E (check + 4 players)
     var aoa = [];
-    aoa.push(["—— Nam Vo ——", "", "", "", ""]);             // row 1
-    aoa.push(["", "", "", "", ""]);                         // row 2 (blank)
-    aoa.push(["", names[0], names[1], names[2], names[3]]); // row 3 header
+    aoa.push(["—— Nam Vo ——", "", "", "", ""]);
+    aoa.push(["", "", "", "", ""]);
+    aoa.push(["", names[0], names[1], names[2], names[3]]);
     aoa.push([
       "TOTAL",
       document.getElementById("total-score-0").innerText,
       document.getElementById("total-score-1").innerText,
       document.getElementById("total-score-2").innerText,
       document.getElementById("total-score-3").innerText
-    ]);                                                     // row 4 totals
+    ]);
 
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
@@ -303,21 +300,22 @@
       aoa.push([check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    // footer
     var now = new Date();
     function pad2(n){ return String(n).padStart(2,"0"); }
     var stamp = "Report được tạo vào ngày " +
       pad2(now.getDate()) + "/" + pad2(now.getMonth()+1) + "/" + now.getFullYear() + " " +
       pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
 
-    aoa.push(["", "", "", "", ""]);       // blank row
-    aoa.push(["", "", "", "", stamp]);    // footer row (E)
+    aoa.push(["", "", "", "", ""]);
+    aoa.push(["", "", "", "", stamp]);
 
     var wb = XLSX.utils.book_new();
     var ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    var maxRow = aoa.length; // 1-based
-    var footerRows = 2;
+    var maxRow = aoa.length;      // 1-based row count
+    var footerRows = 2;           // blank + report
+    var contentStartR = 2;        // row 3 (0-based)
+    var contentEndR   = (maxRow - 1) - footerRows; // last content row (0-based)
 
     ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
 
@@ -330,12 +328,12 @@
     ws["!merges"] = ws["!merges"] || [];
     ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-    // Tắt gridlines (2 lớp: Workbook view + Sheet view)
+    // Tắt gridlines đúng chuẩn Excel: workbook view + sheet view
     wb.Workbook = wb.Workbook || {};
-    wb.Workbook.Views = [{ showGridLines: 0 }];
+    wb.Workbook.Views = [{ showGridLines: false }];
 
     ws["!sheetViews"] = [{
-      showGridLines: 0,
+      showGridLines: false,
       pane: { state: "frozen", ySplit: 3, topLeftCell: "A4", activePane: "bottomLeft" }
     }];
 
@@ -361,43 +359,39 @@
       return "808080";
     }
 
-    // Style nền trắng để “giết” gridlines ở các vùng ngoài bảng
-    var whiteNoBorder = {
+    // === “Kill gridline” chắc chắn: fill trắng một vùng lớn quanh bảng ===
+    // Bạn có thể tăng 2 số này nếu muốn vùng trắng rộng hơn.
+    var PAD_COLS = 11; // A..K (0..10)
+    var PAD_ROWS = 30; // thêm 30 dòng dưới cùng
+    var fillToRow = (maxRow - 1) + PAD_ROWS; // 0-based last row to fill
+    var fillToCol = PAD_COLS - 1;
+
+    var whiteFillNoBorder = {
       fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
       alignment: { horizontal: "center", vertical: "center" }
     };
 
-    // Ép tạo cell + fill trắng cho row 2 (blank) và 2 row footer => không còn gridline
-    // row index (0-based): row2 = 1, footerBlank = maxRow-2, footer = maxRow-1
-    var rBlankTop = 1;
-    var rFooterBlank = maxRow - 2;
-    var rFooter = maxRow - 1;
-
-    for (var cc = 0; cc <= 4; cc++) {
-      setStyle(ensureCell(rBlankTop, cc), whiteNoBorder);
-      setStyle(ensureCell(rFooterBlank, cc), whiteNoBorder);
-      setStyle(ensureCell(rFooter, cc), whiteNoBorder);
+    for (var rr = 0; rr <= fillToRow; rr++) {
+      for (var cc = 0; cc <= fillToCol; cc++) {
+        setStyle(ensureCell(rr, cc), whiteFillNoBorder);
+      }
     }
 
-    // Header A1 style (fill nên cũng không có gridline)
+    // Header A1 (fill xám nhạt)
     setStyle("A1", {
       font: { bold: true, sz: 16 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // Content area ONLY: rows 3..(last data row), cols A..E (kẻ border ở đây)
-    var contentStartR = 2; // row 3
-    var contentEndR   = (maxRow - 1) - footerRows; // last row of table content (0-based)
-    var cStart = 0, cEnd = 4;
-
-    // Ép tạo cell cho toàn vùng content để border luôn đủ
+    // === Kẻ BORDER CHỈ cho vùng nội dung A3:E... ===
+    // Ép tạo cell trong content A..E
     for (var rr = contentStartR; rr <= contentEndR; rr++) {
-      for (var cc = cStart; cc <= cEnd; cc++) ensureCell(rr, cc);
+      for (var cc = 0; cc <= 4; cc++) ensureCell(rr, cc);
     }
 
-    // Row 3 header style + border
-    for (var cc = cStart; cc <= cEnd; cc++) {
+    // Row 3 header
+    for (var cc = 0; cc <= 4; cc++) {
       var addrH = XLSX.utils.encode_cell({ r: 2, c: cc });
       setStyle(addrH, {
         font: { bold: true },
@@ -407,8 +401,8 @@
       });
     }
 
-    // Row 4 totals style + border + color theo số
-    for (var cc = cStart; cc <= cEnd; cc++) {
+    // Row 4 totals + color theo số
+    for (var cc = 0; cc <= 4; cc++) {
       var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
       var styleT = {
         font: { bold: true },
@@ -424,10 +418,10 @@
       setStyle(addrT, styleT);
     }
 
-    // Data rows style + border + zebra + coloring
+    // Data rows: zebra + O/X + number colors
     for (var rr = 4; rr <= contentEndR; rr++) {
       var isStripe = ((rr - 4) % 2 === 0);
-      for (var cc = cStart; cc <= cEnd; cc++) {
+      for (var cc = 0; cc <= 4; cc++) {
         var addrD = XLSX.utils.encode_cell({ r: rr, c: cc });
 
         var base = {
@@ -453,8 +447,8 @@
       }
     }
 
-    // Footer cell E (right aligned), vẫn fill trắng, không border => không gridline
-    var footerCellAddr = XLSX.utils.encode_cell({ r: rFooter, c: 4 });
+    // Footer cell (E last row): right aligned, italic, NO border (đã fill trắng sẵn)
+    var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 });
     if (ws[footerCellAddr]) {
       ws[footerCellAddr].s = {
         fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
