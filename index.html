@@ -277,7 +277,6 @@
     var rowCount = table.rows.length;
     var error = false;
 
-    // keep input colors in sync
     applyColorsToAllScoreInputs();
 
     for (var i = 0; i < 4; i++) {
@@ -306,8 +305,8 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ==================== PDF FONT LOADER (Vietnamese Unicode) ==================== */
-  let __pdfFontsLoaded = false;
+  /* ==================== PDF FONT LOADER (FIXED: attach to doc instance) ==================== */
+  let __pdfFontCache = null; // { regularB64, boldB64 }
 
   function __arrayBufferToBase64(buffer) {
     let binary = "";
@@ -319,12 +318,8 @@
     return btoa(binary);
   }
 
-  async function __loadPdfFontsIfNeeded() {
-    if (__pdfFontsLoaded) return;
-
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      throw new Error("jsPDF chưa load");
-    }
+  async function __getPdfFontCache() {
+    if (__pdfFontCache) return __pdfFontCache;
 
     const regularUrl = "./fonts/NotoSans-Regular.ttf";
     const boldUrl = "./fonts/NotoSans-Bold.ttf";
@@ -340,34 +335,42 @@
       })
     ]);
 
-    const regB64 = __arrayBufferToBase64(regBuf);
-    const boldB64 = __arrayBufferToBase64(boldBuf);
+    __pdfFontCache = {
+      regularB64: __arrayBufferToBase64(regBuf),
+      boldB64: __arrayBufferToBase64(boldBuf)
+    };
+    return __pdfFontCache;
+  }
 
-    const { jsPDF } = window.jspdf;
+  async function __attachVietnameseFontsToDoc(doc) {
+    const cache = await __getPdfFontCache();
 
-    jsPDF.API.addFileToVFS("NotoSans-Regular.ttf", regB64);
-    jsPDF.API.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+    // IMPORTANT: attach to doc instance => avoids vFS undefined
+    doc.addFileToVFS("NotoSans-Regular.ttf", cache.regularB64);
+    doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
 
-    jsPDF.API.addFileToVFS("NotoSans-Bold.ttf", boldB64);
-    jsPDF.API.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
-
-    __pdfFontsLoaded = true;
+    doc.addFileToVFS("NotoSans-Bold.ttf", cache.boldB64);
+    doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
   /* ==================== EXPORT PDF (Vietnamese OK) ==================== */
   async function exportPDF() {
-    // keep behavior: export uses current computed state (may alert if errors)
     completeScores();
 
-    try {
-      await __loadPdfFontsIfNeeded();
-    } catch (e) {
-      alert("Lỗi load font PDF: " + (e && e.message ? e.message : e));
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("Chưa load được thư viện jsPDF.\nHãy kiểm tra:\n/libs/jspdf.umd.min.js\n/libs/jspdf.plugin.autotable.min.js");
       return;
     }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+
+    try {
+      await __attachVietnameseFontsToDoc(doc);
+    } catch (e) {
+      alert("Lỗi load font PDF: " + (e && e.message ? e.message : e));
+      return;
+    }
 
     const table = document.getElementById("scoreTable");
 
@@ -446,7 +449,7 @@
           }
         }
 
-        // Data rows: color by sign for score columns
+        // Data rows: color by sign
         if (data.section === "body" && row.index >= 1 && col.index >= 1) {
           const n = parseInt(cell.raw, 10) || 0;
           cell.styles.textColor = signColor(n);
