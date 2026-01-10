@@ -21,14 +21,14 @@
     --radius: 16px;
   }
 
-  /* ✅ chặn “tràn ngang 1 chút xíu” do shadow/subpixel */
+  /* ✅ chặn overflow ngang */
   * , *::before, *::after { box-sizing: border-box; }
   html, body{
     width: 100%;
     max-width: 100%;
     margin: 0;
     padding: 0;
-    overflow-x: clip; /* ưu tiên clip */
+    overflow-x: clip;
   }
   @supports not (overflow: clip){
     html, body{ overflow-x: hidden; }
@@ -53,7 +53,7 @@
     max-width: 980px;
     width: 100%;
     margin: 0 auto;
-    overflow-x: clip; /* ✅ thêm 1 lớp chặn overflow */
+    overflow-x: clip;
   }
   @supports not (overflow: clip){
     .wrap{ overflow-x: hidden; }
@@ -72,7 +72,7 @@
   .table-scroll{
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;                 /* nếu cần cuộn thì chỉ cuộn trong khung */
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
@@ -80,8 +80,8 @@
   table{
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;              /* ✅ cột co giãn theo màn */
-    min-width: 0;                     /* ✅ không ép rộng hơn viewport */
+    table-layout: fixed;
+    min-width: 0;
   }
 
   th, td{
@@ -181,15 +181,14 @@
     display: none;
   }
 
-  /* ✅ Mobile: giảm shadow (shadow là nguyên nhân hay gây overflow “tí xíu” trên iOS) */
   @media (max-width: 600px){
     body{ padding: 12px 8px 22px; }
     #scoreTable thead, #scoreTable thead th { font-size: 20px; }
     th, td { padding: 8px 6px; }
     input[type="number"], input[type="text"]{ font-size: 16px; padding: 7px 8px; max-width: none; }
     button { font-size: 22px; padding: 10px 14px; border-radius: 14px; }
-    .table-card{ box-shadow: none; }     /* ✅ bỏ shadow trên mobile để hết tràn ngang */
-    button{ box-shadow: none; }          /* ✅ bỏ shadow nút trên mobile */
+    .table-card{ box-shadow: none; }
+    button{ box-shadow: none; }
   }
 </style>
 </head>
@@ -225,8 +224,8 @@
 
   <div class="controls">
     <div class="controls-row">
-      <button class="btn-primary" onclick="enterPoints()">Enter Points</button>
-      <button class="btn-secondary" onclick="completeScores()">Complete</button>
+      <button class="btn-secondary" onclick="enterPoints()">Enter Points</button>
+      <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
       <button class="btn-danger" onclick="resetGame()">Reset</button>
