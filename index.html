@@ -37,6 +37,7 @@
   .score-positive { color: green; }
   .score-negative { color: red; }
   .score-neutral  { color: grey; }
+
   .check-positive { color: green; }
   .check-negative { color: red; }
   .total-score { font-size: 24px; font-weight: bold; }
@@ -106,6 +107,45 @@
 <script>
   var STORAGE_KEY = "scoreTable_save_v1";
 
+  /* ================== NEW: Color rule for each input ================== */
+  function applySignColorToInput(input) {
+    // giữ class score-input-* và chỉ thay 3 class màu
+    input.classList.remove("score-positive", "score-negative", "score-neutral");
+
+    var raw = (input.value || "").trim();
+    var n = parseInt(raw, 10);
+
+    if (raw === "" || isNaN(n) || n === 0) input.classList.add("score-neutral");
+    else if (n > 0) input.classList.add("score-positive");
+    else input.classList.add("score-negative");
+  }
+
+  function bindScoreInput(input) {
+    // tránh bind trùng nếu gọi nhiều lần
+    if (input.dataset && input.dataset.bound === "1") {
+      applySignColorToInput(input);
+      return;
+    }
+    if (input.dataset) input.dataset.bound = "1";
+
+    applySignColorToInput(input);
+
+    input.addEventListener("input", function() {
+      applySignColorToInput(input);
+      saveGame();
+    });
+  }
+
+  function applyColorsToAllScoreInputs() {
+    for (var i = 0; i < 4; i++) {
+      var inputs = document.getElementsByClassName("score-input-" + i);
+      Array.from(inputs).forEach(function(inp) {
+        applySignColorToInput(inp);
+      });
+    }
+  }
+
+  /* ==================== SAVE/LOAD ==================== */
   function saveGame() {
     var table = document.getElementById("scoreTable");
     var data = { headers: [], rows: [] };
@@ -131,10 +171,11 @@
   }
 
   function attachAutoSaveToExistingInputs() {
+    // version_4: giờ dùng bindScoreInput để vừa save vừa tô màu
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) {
-        inp.addEventListener("input", saveGame);
+        bindScoreInput(inp);
       });
     }
   }
@@ -173,13 +214,12 @@
                 cell.innerHTML = '<input type="number" class="score-input-' + (i - 1) + '">';
                 var inp = cell.firstChild;
                 inp.value = (r.scores && r.scores[i - 1] != null) ? r.scores[i - 1] : "";
-                inp.addEventListener("input", saveGame);
+                bindScoreInput(inp);
               }
             });
           }
 
-          completeScores();
-          saveGame();
+          completeScores(); // complete sẽ gọi saveGame()
           return;
         }
       } catch (e) {}
@@ -203,6 +243,7 @@
     localStorage.removeItem(STORAGE_KEY);
   }
 
+  /* ==================== CORE ==================== */
   function resetGame() {
     if (!confirm("Bạn có chắc muốn reset để tạo game mới và xoá hết dữ liệu cũ không?")) return;
     localStorage.removeItem(STORAGE_KEY);
@@ -225,7 +266,7 @@
     for (var i = 1; i <= 4; i++) {
       var cell = row.insertCell(i);
       cell.innerHTML = '<input type="number" class="score-input-' + (i - 1) + '">';
-      cell.firstChild.addEventListener("input", saveGame);
+      bindScoreInput(cell.firstChild);
     }
     saveGame();
   }
@@ -235,6 +276,9 @@
     var table = document.getElementById("scoreTable");
     var rowCount = table.rows.length;
     var error = false;
+
+    // NEW: đảm bảo màu input luôn đúng (kể cả khi load)
+    applyColorsToAllScoreInputs();
 
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
@@ -262,6 +306,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
+  /* ==================== EXPORT EXCEL (version_4 kept) ==================== */
   function exportExcel() {
     if (!window.XLSX) {
       alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
@@ -328,7 +373,6 @@
     ws["!merges"] = ws["!merges"] || [];
     ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-    // Tắt gridlines: workbook view + sheet view (KHÔNG fill trắng nữa)
     wb.Workbook = wb.Workbook || {};
     wb.Workbook.Views = [{ showGridLines: false }];
 
@@ -359,14 +403,13 @@
       return "808080";
     }
 
-    // Header A1 style
     setStyle("A1", {
       font: { bold: true, sz: 16 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // Create all cells in content area so borders are complete
+    // create all cells in content area so borders are complete
     for (var rr = contentStartR; rr <= contentEndR; rr++) {
       for (var cc = 0; cc <= 4; cc++) ensureCell(rr, cc);
     }
@@ -428,7 +471,7 @@
       }
     }
 
-    // Footer report cell (E last row): right aligned, italic, no border
+    // Footer cell (E last row): right aligned, italic, no border
     var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 });
     ensureCell(maxRow - 1, 4);
     ws[footerCellAddr].s = {
