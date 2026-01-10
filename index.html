@@ -352,7 +352,7 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
-  /* ==================== EXPORT PDF (ADD ROUND # COLUMN) ==================== */
+  /* ==================== EXPORT PDF (Round # + fix TOTAL wrap) ==================== */
   async function exportPDF() {
     completeScores();
 
@@ -388,7 +388,6 @@
     doc.setFontSize(16);
     doc.text("—— Nam Vo ——", doc.internal.pageSize.getWidth() / 2, 50, { align: "center" });
 
-    // NEW: add "#" column before check
     // Columns: # | check | p1 | p2 | p3 | p4
     const head = [["#", "", names[0], names[1], names[2], names[3]]];
 
@@ -434,10 +433,10 @@
       },
       alternateRowStyles: { fillColor: [251, 251, 251] },
 
-      // make # column narrow
+      // make # column narrow, and keep TOTAL in one line by widening column 1
       columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 28 }
+        0: { cellWidth: 26 }, // #
+        1: { cellWidth: 48 }  // check / TOTAL (wider => no wrap)
       },
 
       didParseCell: function (data) {
@@ -445,7 +444,7 @@
         const col = data.column;
         const cell = data.cell;
 
-        // TOTAL row (body row 0): columns now shifted
+        // TOTAL row
         if (data.section === "body" && row.index === 0) {
           cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
@@ -466,17 +465,18 @@
           cell.styles.textColor = signColor(n);
         }
 
-        // Check column is now index 1: O/X color
+        // Check column is index 1: O/X color (TOTAL will be plain black)
         if (data.section === "body" && col.index === 1) {
           const v = String(cell.raw || "").trim();
           cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
+
           if (v === "O") cell.styles.textColor = [0, 128, 0];
           else if (v === "X") cell.styles.textColor = [204, 0, 0];
           else cell.styles.textColor = 0;
         }
 
-        // # column (index 0) neutral
+        // # column neutral
         if (data.section === "body" && col.index === 0) {
           cell.styles.textColor = [128, 128, 128];
         }
