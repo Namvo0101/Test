@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Đánh bài cùng Bích Ngân ^_^</title>
+
+<style>
+  body { margin: 0; padding: 0; text-align: center; }
+  #header { font-size: 10px; margin: 5px 0; }
+
+  table{
+    width: 100%;                 /* ✅ fit màn hình */
+    border-collapse: collapse;
+    table-layout: fixed;         /* ✅ chia cột cố định */
+  }
+
+  /* Cột check cố định, 4 cột còn lại chia đều */
+  col.check { width: 44px; }
+  col.player { width: calc((100% - 44px) / 4); }
+
+  th, td{
+    border: 1px solid black;
+    padding: 3px;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;         /* ✅ không xuống dòng */
+  }
+
+  /* Input tên */
+  input[type="text"]{
+    width: 100%;
+    box-sizing: border-box;
+    font-weight: bold;
+    text-align: center;
+    border: none;
+    outline: none;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;         /* JS sẽ đảm bảo vừa, hạn chế ... */
+    font-size: 20px;             /* base size (JS sẽ co nếu cần) */
+  }
+
+  /* Input điểm */
+  input[type="number"]{
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .score-positive{ color: green; }
+  .score-negative{ color: red; }
+  .score-neutral{ color: gray; }
+
+  .total-score{
+    font-size: 22px;
+    font-weight: bold;
+  }
+
+  .check-positive{ color: green; font-weight: bold; }
+  .check-negative{ color: red; font-weight: bold; }
+
+  /* Sticky header */
+  thead tr:first-child th{
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+  }
+
+  thead tr:nth-child(2) td{
+    position: sticky;
+    top: 40px;
+    background: white;
+    z-index: 5;
+  }
+
+  button{ margin: 5px; padding: 5px 10px; }
+
+  @media (max-width: 600px){
+    input[type="number"]{ font-size: 16px; }
+    .total-score{ font-size: 18px; }
+  }
+</style>
+</head>
+
+<body>
+  <div id="header">------ Nam Vo ------</div>
+
+  <table id="scoreTable">
+    <colgroup>
+      <col class="check">
+      <col class="player">
+      <col class="player">
+      <col class="player">
+      <col class="player">
+    </colgroup>
+
+    <thead>
+      <tr>
+        <th></th>
+        <th><input id="name-0" value="Bích Ngân" oninput="saveState(); fitHeaderNames();" onblur="setName(0)"></th>
+        <th><input id="name-1" value="Phương Nam" oninput="saveState(); fitHeaderNames();" onblur="setName(1)"></th>
+        <th><input id="name-2" value="Cẩm Lệ" oninput="saveState(); fitHeaderNames();" onblur="setName(2)"></th>
+        <th><input id="name-3" value="Nhật Nam" oninput="saveState(); fitHeaderNames();" onblur="setName(3)"></th>
+      </tr>
+      <tr>
+        <td></td>
+        <td><span id="total-score-0" class="total-score score-neutral">0</span></td>
+        <td><span id="total-score-1" class="total-score score-neutral">0</span></td>
+        <td><span id="total-score-2" class="total-score score-neutral">0</span></td>
+        <td><span id="total-score-3" class="total-score score-neutral">0</span></td>
+      </tr>
+    </thead>
+
+    <tbody></tbody>
+  </table>
+
+  <button onclick="enterPoints()">Enter Points</button>
+  <button onclick="completeScores()">Complete</button>
+  <button onclick="resetGame()">Reset</button>
+
+<script>
+const STORAGE_KEY = "score_table_v1";
+
+/* ====== TEXT MEASURE + AUTO FIT NAME FONT ====== */
+function measureTextWidth(text, font) {
+  const canvas = measureTextWidth._c || (measureTextWidth._c = document.createElement("canvas"));
+  const ctx = canvas.getContext("2d");
+  ctx.font = font;
+  return ctx.measureText(text || "").width;
+}
+
+function fitHeaderNames() {
+  const ths = document.querySelectorAll("#scoreTable thead tr:first-child th");
+  if (!ths || ths.length < 5) return;
+
+  for (let i = 1; i <= 4; i++) {
+    const th = ths[i];
+    const input = th.querySelector("input");
+
+    const text = input ? (input.value || "") : (th.textContent || "");
+    const cellW = th.clientWidth;
+
+    const padding = 12; // chừa cho padding/biên
+    const targetW = Math.max(10, cellW - padding);
+
+    const el = input || th;
+    const cs = window.getComputedStyle(el);
+    const fontFamily = cs.fontFamily || "Arial";
+    const fontWeight = cs.fontWeight || "700";
+
+    let fontSize = parseFloat(cs.fontSize) || 20;
+    const baseSize = 20;
+    const minSize = 10;
+
+    // reset lên base trước khi fit (để khi đổi tên ngắn lại thì chữ to lại)
+    fontSize = baseSize;
+
+    while (fontSize > minSize) {
+      const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      if (measureTextWidth(text, font) <= targetW) break;
+      fontSize -= 1;
+    }
+
+    el.style.fontSize = fontSize + "px";
+  }
+}
+
+/* ====== NAME LOCK (blur khóa tên như cũ) ====== */
+function setName(i) {
+  const input = document.getElementById("name-" + i);
+  if (!input) return;
+  const th = input.parentElement;
+
+  th.textContent = (input.value || "").trim(); // blur -> khóa tên
+  saveState();
+  fitHeaderNames();
+}
+
+/* ====== ADD ROW ====== */
+function enterPoints() {
+  const tbody = document.querySelector("#scoreTable tbody");
+  const row = tbody.insertRow();
+
+  row.insertCell(0).innerHTML = "";
+
+  for (let i = 0; i < 4; i++) {
+    const cell = row.insertCell(i + 1);
+    cell.innerHTML = `<input type="number" class="score-input-${i}">`;
+    const inp = cell.firstChild;
+    inp.addEventListener("input", () => {
+      saveState();
+      // nếu bạn muốn total cập nhật live, mở dòng dưới:
+      // completeScores(false);
+    });
+  }
+
+  saveState();
+}
+
+/* ====== COMPLETE ====== */
+function completeScores(showAlert = true) {
+  for (let i = 0; i < 4; i++) {
+    let total = 0;
+    document.querySelectorAll(".score-input-" + i).forEach(inp => {
+      total += parseInt(inp.value) || 0;
+    });
+
+    const el = document.getElementById("total-score-" + i);
+    el.textContent = total;
+    el.className =
+      "total-score " +
+      (total > 0 ? "score-positive" :
+       total < 0 ? "score-negative" : "score-neutral");
+  }
+
+  let error = false;
+  document.querySelectorAll("#scoreTable tbody tr").forEach(row => {
+    let sum = 0;
+    for (let i = 1; i <= 4; i++) {
+      sum += parseInt(row.cells[i].firstChild.value) || 0;
+    }
+
+    row.cells[0].innerHTML =
+      sum === 0
+        ? '<span class="check-positive">O</span>'
+        : '<span class="check-negative">X</span>';
+
+    if (sum !== 0) error = true;
+  });
+
+  if (showAlert && error) alert("Nhập sai rồi bạn êyyyy ^_^");
+  saveState();
+}
+
+/* ====== STORAGE ====== */
+function readNames() {
+  const names = [];
+  for (let i = 0; i < 4; i++) {
+    const input = document.getElementById("name-" + i);
+    if (input) {
+      names.push(input.value || "");
+    } else {
+      const th = document.querySelectorAll("#scoreTable thead tr:first-child th")[i + 1];
+      names.push((th && th.textContent) ? th.textContent.trim() : "");
+    }
+  }
+  return names;
+}
+
+function readRows() {
+  const rows = [];
+  document.querySelectorAll("#scoreTable tbody tr").forEach(row => {
+    const r = [];
+    for (let i = 1; i <= 4; i++) r.push(row.cells[i].firstChild.value || "");
+    rows.push(r);
+  });
+  return rows;
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      names: readNames(),
+      rows: readRows()
+    }));
+  } catch (e) {
+    console.warn("saveState failed:", e);
+  }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+    if (!state) return;
+
+    // Restore names: có tên thì lock như blur
+    if (Array.isArray(state.names)) {
+      state.names.forEach((n, i) => {
+        const name = (n || "").trim();
+        if (name) {
+          const th = document.querySelectorAll("#scoreTable thead tr:first-child th")[i + 1];
+          if (th) th.textContent = name;
+        } else {
+          const inp = document.getElementById("name-" + i);
+          if (inp) inp.value = "";
+        }
+      });
+    }
+
+    // Clear rows
+    document.querySelector("#scoreTable tbody").innerHTML = "";
+
+    // Restore rows
+    if (Array.isArray(state.rows)) {
+      state.rows.forEach(r => {
+        enterPoints();
+        const last = document.querySelector("#scoreTable tbody tr:last-child");
+        r.forEach((v, i) => last.cells[i + 1].firstChild.value = v);
+      });
+    }
+
+    // recompute without alert
+    completeScores(false);
+  } catch (e) {
+    console.warn("loadState failed:", e);
+  }
+}
+
+/* ====== RESET ====== */
+function resetGame() {
+  if (!confirm("Bắt đầu ván mới?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+/* ====== INIT ====== */
+window.addEventListener("DOMContentLoaded", () => {
+  loadState();
+  // chờ layout ổn định rồi fit tên
+  setTimeout(fitHeaderNames, 0);
+});
+
+window.addEventListener("resize", () => {
+  fitHeaderNames();
+});
+</script>
+
+</body>
+</html>
