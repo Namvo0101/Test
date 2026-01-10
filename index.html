@@ -21,10 +21,15 @@
     --radius: 16px;
   }
 
+  html, body{
+    width: 100%;
+    overflow-x: hidden; /* ✅ chặn cuộn ngang toàn trang */
+  }
+
   body {
     text-align: center;
     margin: 0;
-    padding: 16px 12px 28px;
+    padding: 14px 10px 26px;
     background: var(--bg);
     color: var(--text);
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -35,12 +40,11 @@
     margin: 8px auto 12px;
     color: var(--muted);
     letter-spacing: 0.12em;
-    text-transform: none; /* không đổi nội dung */
   }
 
-  /* container giống “card” */
   .wrap{
     max-width: 980px;
+    width: 100%;
     margin: 0 auto;
   }
 
@@ -50,28 +54,37 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 10px;
-    overflow: hidden; /* bo góc table */
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
-  /* cho bảng cuộn ngang nếu màn nhỏ */
   .table-scroll{
-    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;                 /* nếu màn rất nhỏ vẫn cuộn trong khung */
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 
   table {
-    margin: 0 auto;
-    border-collapse: collapse;
     width: 100%;
-    min-width: 720px; /* giúp cột không bị bóp quá */
+    border-collapse: collapse;
+    table-layout: fixed;              /* ✅ cột co giãn theo màn hình */
+    min-width: 0;                     /* ✅ không ép rộng hơn viewport */
+  }
+
+  /* chỉ giữ min-width cho màn lớn để nhìn thoáng */
+  @media (min-width: 720px){
+    table{ min-width: 720px; }
   }
 
   th, td {
     padding: 10px 8px;
     text-align: center;
     box-sizing: border-box;
-    word-wrap: break-word;
     border-bottom: 1px solid var(--line);
+    vertical-align: middle;
   }
 
   thead th{
@@ -79,12 +92,11 @@
     border-bottom: 1px solid var(--line-strong);
   }
 
-  /* zebra giống PDF */
+  /* zebra */
   tbody tr:nth-child(even){
     background: rgba(0,0,0,0.02);
   }
 
-  /* highlight nhẹ theo O/X (không đổi nội dung) */
   tbody tr.row-ok{
     background: linear-gradient(0deg, var(--ok-bg), var(--ok-bg));
   }
@@ -92,14 +104,10 @@
     background: linear-gradient(0deg, var(--err-bg), var(--err-bg));
   }
 
-  /* hover dễ đọc */
-  tbody tr:hover{
-    filter: brightness(0.99);
-  }
-
+  /* input */
   input[type="number"], input[type="text"]{
-    width: 92%;
-    max-width: 160px;
+    width: 100%;
+    max-width: 220px;
     padding: 8px 10px;
     border-radius: 12px;
     border: 1px solid var(--line);
@@ -108,11 +116,7 @@
     box-sizing: border-box;
     text-align: center;
     font-size: 18px;
-    transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
-  }
-
-  input[type="text"]{
-    max-width: 220px;
+    transition: box-shadow .15s ease, border-color .15s ease;
   }
 
   input[type="number"]:focus, input[type="text"]:focus{
@@ -120,17 +124,15 @@
     box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
   }
 
-  /* giữ rule màu như bạn đã có */
   .score-positive { color: green; }
   .score-negative { color: red; }
   .score-neutral  { color: grey; }
 
   .check-positive { color: green; font-weight: 800; }
   .check-negative { color: red; font-weight: 800; }
-
   .total-score { font-size: 24px; font-weight: bold; }
 
-  /* Nút */
+  /* controls */
   .controls{
     margin: 14px auto 0;
     display: grid;
@@ -147,7 +149,7 @@
 
   button{
     margin-top: 0;
-    font-size: 26px; /* giữ to nhưng đẹp hơn */
+    font-size: 26px;
     padding: 12px 18px;
     border-radius: 16px;
     border: 1px solid var(--line);
@@ -160,7 +162,6 @@
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
 
-  /* không đổi text, chỉ đổi style */
   .btn-primary{ background: #111827; color: #fff; border-color: rgba(17,24,39,0.35); }
   .btn-secondary{ background: #fff; color: #111827; }
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
@@ -171,7 +172,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    font-size: 26px; /* nhỏ hơn chút để đỡ “khủng” */
+    font-size: 26px;
   }
 
   /* Ẩn dòng Total trên web */
@@ -179,10 +180,13 @@
     display: none;
   }
 
+  /* ✅ Mobile tune: giảm padding/font, tránh tràn */
   @media (max-width: 600px){
-    table { min-width: 640px; }
-    button { font-size: 24px; padding: 11px 16px; border-radius: 14px; }
-    input[type="number"], input[type="text"]{ font-size: 17px; }
+    body{ padding: 12px 8px 22px; }
+    #scoreTable thead, #scoreTable thead th { font-size: 20px; }
+    th, td { padding: 8px 6px; }
+    input[type="number"], input[type="text"]{ font-size: 16px; padding: 7px 8px; max-width: none; }
+    button { font-size: 22px; padding: 10px 14px; border-radius: 14px; }
   }
 </style>
 </head>
@@ -203,7 +207,6 @@
             <th><input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
           </tr>
 
-          <!-- vẫn giữ trong DOM để tính total/export, chỉ ẩn bằng CSS -->
           <tr>
             <td></td>
             <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
@@ -235,14 +238,10 @@
 
 <script>
   var STORAGE_KEY = "scoreTable_save_v1";
-
-  // chặn save khi đang reset (để beforeunload không ghi lại dữ liệu cũ)
   var __isResetting = false;
 
-  /* ================== live sign color for each input ================== */
   function applySignColorToInput(input) {
     input.classList.remove("score-positive", "score-negative", "score-neutral");
-
     var raw = (input.value || "").trim();
     var n = parseInt(raw, 10);
 
@@ -275,7 +274,6 @@
     }
   }
 
-  /* ==================== SAVE/LOAD ==================== */
   function saveGame() {
     if (__isResetting) return;
 
@@ -356,28 +354,11 @@
       } catch (e) {}
     }
 
-    if (trimmed[0] === "<" && trimmed.toLowerCase().indexOf("<table") !== -1) {
-      try {
-        var wrapper = document.createElement("div");
-        wrapper.innerHTML = trimmed;
-        var newTable = wrapper.querySelector("table");
-        if (newTable && newTable.id === "scoreTable") {
-          table.replaceWith(newTable);
-          attachAutoSaveToExistingInputs();
-          completeScores();
-          saveGame();
-          return;
-        }
-      } catch (e2) {}
-    }
-
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  /* ==================== CORE ==================== */
   function resetGame() {
     if (!confirm("Bạn có chắc muốn reset để tạo game mới và xoá hết dữ liệu cũ không?")) return;
-
     __isResetting = true;
     localStorage.removeItem(STORAGE_KEY);
     setTimeout(function(){ location.reload(); }, 0);
@@ -430,7 +411,6 @@
         rowSum += parseInt(cell.value) || 0;
       }
 
-      // update O/X + row highlight class (visual only)
       row.classList.remove("row-ok", "row-error");
 
       var checkCell = row.cells[0];
@@ -530,7 +510,6 @@
     doc.setFontSize(16);
     doc.text("—— Nam Vo ——", doc.internal.pageSize.getWidth() / 2, 50, { align: "center" });
 
-    // Columns: # | check | p1 | p2 | p3 | p4
     const head = [["#", "", names[0], names[1], names[2], names[3]]];
 
     const totals = [0, 1, 2, 3].map(i => document.getElementById("total-score-" + i).innerText);
@@ -574,12 +553,10 @@
         textColor: 0
       },
       alternateRowStyles: { fillColor: [251, 251, 251] },
-
       columnStyles: {
         0: { cellWidth: 26 },
-        1: { cellWidth: 48 } // TOTAL không xuống dòng
+        1: { cellWidth: 48 }
       },
-
       didParseCell: function (data) {
         const row = data.row;
         const col = data.column;
