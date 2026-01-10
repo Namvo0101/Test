@@ -62,12 +62,9 @@
     font-size: 30px;
   }
 
-  /* sticky total row */
-  #scoreTable tr:nth-child(2), #scoreTable tr:nth-child(2) td {
-    position: sticky;
-    top: 23px;
-    background-color: white;
-    z-index: 5;
+  /* (UPDATE #1) Ẩn dòng Total trên web */
+  #scoreTable thead tr:nth-child(2) {
+    display: none;
   }
 </style>
 </head>
@@ -142,7 +139,7 @@
     }
   }
 
-  // FIX: loadGame tự nhận diện JSON/HTML, tránh in JSON ra màn hình
+  // loadGame tự nhận diện JSON/HTML để tránh lỗi in JSON ra màn hình
   function loadGame() {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
@@ -190,21 +187,17 @@
           saveGame();
           return;
         }
-      } catch (e) {
-        // JSON lỗi -> rơi xuống dưới để xử lý
-      }
+      } catch (e) {}
     }
 
-    // Case B: lỡ lưu dạng HTML <table...> (bản lỗi trước)
+    // Case B: lỡ lưu dạng HTML <table...>
     if (trimmed[0] === "<" && trimmed.toLowerCase().indexOf("<table") !== -1) {
       try {
-        // thay table bằng html đã lưu
         var wrapper = document.createElement("div");
         wrapper.innerHTML = trimmed;
         var newTable = wrapper.querySelector("table");
         if (newTable && newTable.id === "scoreTable") {
           table.replaceWith(newTable);
-          // gắn lại listeners cho input điểm
           attachAutoSaveToExistingInputs();
           completeScores();
           saveGame();
@@ -213,7 +206,7 @@
       } catch (e2) {}
     }
 
-    // Case C: dữ liệu rác -> xoá để khỏi hiện chữ bậy
+    // Case C: dữ liệu rác
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -276,7 +269,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  // ===== Export Excel: bỏ RowSum + thêm dòng report góc phải cuối file =====
+  // Export Excel: bỏ RowSum + footer report + (UPDATE #2) TOTAL row có màu theo số
   function exportExcel() {
     if (!window.XLSX) {
       alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
@@ -297,7 +290,7 @@
 
     var names = [getPlayerName(0), getPlayerName(1), getPlayerName(2), getPlayerName(3)];
 
-    // AOA now has 5 columns: A..E  (check + 4 players)
+    // AOA has 5 columns: A..E (check + 4 players)
     var aoa = [];
     aoa.push(["—— Nam Vo ——", "", "", "", ""]);     // row 1 merged A1:E1
     aoa.push(["", "", "", "", ""]);                 // row 2 blank
@@ -310,16 +303,15 @@
       document.getElementById("total-score-3").innerText
     ]); // row 4 totals
 
-    // data rows (row 5..)
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
-      var check = (row.cells[0].textContent || "").trim(); // O/X
+      var check = (row.cells[0].textContent || "").trim();
       var vals = [];
       for (var c = 1; c <= 4; c++) vals.push(parseInt(row.cells[c].firstChild.value) || 0);
       aoa.push([check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    // footer note (outside content) on last row, col E
+    // footer note
     var now = new Date();
     function pad2(n){ return String(n).padStart(2,"0"); }
     var stamp = "Report được tạo vào ngày " +
@@ -332,30 +324,24 @@
     var wb = XLSX.utils.book_new();
     var ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    var maxRow = aoa.length;   // 1-based
-    var maxCol = 5;            // A..E
+    var maxRow = aoa.length;
 
-    // widths
     ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
 
-    // row heights
     ws["!rows"] = ws["!rows"] || [];
     ws["!rows"][0] = { hpt: 24 };
     ws["!rows"][1] = { hpt: 8 };
     ws["!rows"][2] = { hpt: 18 };
     ws["!rows"][3] = { hpt: 18 };
 
-    // merge A1:E1
     ws["!merges"] = ws["!merges"] || [];
     ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-    // hide gridlines + freeze top 3 rows
     ws["!sheetViews"] = [{
       showGridLines: false,
       pane: { state: "frozen", ySplit: 3, topLeftCell: "A4", activePane: "bottomLeft" }
     }];
 
-    // autofilter A3:E3
     ws["!autofilter"] = { ref: "A3:E3" };
 
     function borderThin() {
@@ -367,23 +353,27 @@
       };
     }
     function setStyle(addr, s) { if (ws[addr]) ws[addr].s = s; }
+    function numColorRgb(n) {
+      if (n > 0) return "008000";   // green
+      if (n < 0) return "CC0000";   // red
+      return "808080";             // grey
+    }
 
-    // A1 header style (NO border)
+    // A1 header (no border)
     setStyle("A1", {
       font: { bold: true, sz: 16 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // Content area only: rows 3..(last data row) with borders
-    // We do NOT border the final blank row + footer row.
-    var footerRows = 2; // blank + footer
-    var contentStartR = 2;                 // row 3 (0-based)
-    var contentEndR   = (maxRow - 1) - footerRows; // last data row index (0-based)
+    // Content area only (exclude last 2 footer rows)
+    var footerRows = 2;
+    var contentStartR = 2;                   // row 3
+    var contentEndR   = (maxRow - 1) - footerRows;
     var contentStartC = 0;
     var contentEndC   = 4;
 
-    // header row (row 3)
+    // row 3 header
     for (var cc = contentStartC; cc <= contentEndC; cc++) {
       var addrH = XLSX.utils.encode_cell({ r: 2, c: cc });
       setStyle(addrH, {
@@ -394,16 +384,29 @@
       });
     }
 
-    // totals row (row 4)
+    // row 4 totals (UPDATE #2: thêm màu theo số)
     for (var cc = contentStartC; cc <= contentEndC; cc++) {
       var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
-      setStyle(addrT, {
+
+      var styleT = {
         font: { bold: true },
         alignment: { horizontal: "center", vertical: "center" },
         fill: { patternType: "solid", fgColor: { rgb: "F7F7F7" } },
         border: borderThin()
-      });
-      if (cc >= 1 && cc <= 4 && ws[addrT]) ws[addrT].z = "0";
+      };
+
+      // Cells B..E (score totals) => color by sign
+      if (cc >= 1 && cc <= 4 && ws[addrT]) {
+        ws[addrT].z = "0";
+        var num = Number(ws[addrT].v);
+        if (!isNaN(num)) {
+          styleT.font = Object.assign({}, styleT.font, { color: { rgb: numColorRgb(num) } });
+        } else {
+          styleT.font = Object.assign({}, styleT.font, { color: { rgb: "808080" } });
+        }
+      }
+
+      setStyle(addrT, styleT);
     }
 
     // data rows: zebra + O/X + +/- colors
@@ -434,6 +437,7 @@
           if (!isNaN(num)) {
             if (num > 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "008000" } });
             if (num < 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "CC0000" } });
+            if (num === 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "808080" } });
           }
         }
 
@@ -441,9 +445,9 @@
       }
     }
 
-    // Footer cell style: right aligned, italic, NO border
-    var footerRowIndex0 = maxRow - 1; // last row (0-based)
-    var footerCellAddr = XLSX.utils.encode_cell({ r: footerRowIndex0, c: 4 }); // column E
+    // footer cell style: right aligned, italic, no border
+    var footerRowIndex0 = maxRow - 1;
+    var footerCellAddr = XLSX.utils.encode_cell({ r: footerRowIndex0, c: 4 });
     if (ws[footerCellAddr]) {
       ws[footerCellAddr].s = {
         alignment: { horizontal: "right", vertical: "center" },
