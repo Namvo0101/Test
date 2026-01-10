@@ -62,7 +62,7 @@
     font-size: 30px;
   }
 
-  /* (UPDATE) Ẩn dòng Total trên web */
+  /* Ẩn dòng Total trên web */
   #scoreTable thead tr:nth-child(2) {
     display: none;
   }
@@ -261,7 +261,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  // ===== Export Excel FIX: ép tạo cell cho toàn vùng bảng để border đủ =====
+  // ===== Export Excel: tắt gridlines chắc chắn + footer không còn gridline =====
   function exportExcel() {
     if (!window.XLSX) {
       alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
@@ -271,6 +271,7 @@
     completeScores();
 
     var table = document.getElementById("scoreTable");
+
     function getPlayerName(i) {
       var cell = table.rows[0] && table.rows[0].cells[i + 1];
       if (!cell) return "";
@@ -278,20 +279,21 @@
       var v = inp ? inp.value : (cell.textContent || "");
       return (v || "").toString().trim();
     }
+
     var names = [getPlayerName(0), getPlayerName(1), getPlayerName(2), getPlayerName(3)];
 
-    // AOA 5 cột: A..E
+    // AOA 5 cột: A..E (check + 4 players)
     var aoa = [];
-    aoa.push(["—— Nam Vo ——", "", "", "", ""]);                 // 1
-    aoa.push(["", "", "", "", ""]);                             // 2
-    aoa.push(["", names[0], names[1], names[2], names[3]]);     // 3
+    aoa.push(["—— Nam Vo ——", "", "", "", ""]);             // row 1
+    aoa.push(["", "", "", "", ""]);                         // row 2 (blank)
+    aoa.push(["", names[0], names[1], names[2], names[3]]); // row 3 header
     aoa.push([
       "TOTAL",
       document.getElementById("total-score-0").innerText,
       document.getElementById("total-score-1").innerText,
       document.getElementById("total-score-2").innerText,
       document.getElementById("total-score-3").innerText
-    ]);                                                         // 4
+    ]);                                                     // row 4 totals
 
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
@@ -308,26 +310,32 @@
       pad2(now.getDate()) + "/" + pad2(now.getMonth()+1) + "/" + now.getFullYear() + " " +
       pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
 
-    aoa.push(["", "", "", "", ""]);       // blank
-    aoa.push(["", "", "", "", stamp]);    // footer (E)
+    aoa.push(["", "", "", "", ""]);       // blank row
+    aoa.push(["", "", "", "", stamp]);    // footer row (E)
 
     var wb = XLSX.utils.book_new();
     var ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    var maxRow = aoa.length;   // 1-based
+    var maxRow = aoa.length; // 1-based
+    var footerRows = 2;
+
     ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
 
     ws["!rows"] = ws["!rows"] || [];
     ws["!rows"][0] = { hpt: 24 };
-    ws["!rows"][1] = { hpt: 8 };
+    ws["!rows"][1] = { hpt: 10 };
     ws["!rows"][2] = { hpt: 18 };
     ws["!rows"][3] = { hpt: 18 };
 
     ws["!merges"] = ws["!merges"] || [];
     ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
+    // Tắt gridlines (2 lớp: Workbook view + Sheet view)
+    wb.Workbook = wb.Workbook || {};
+    wb.Workbook.Views = [{ showGridLines: 0 }];
+
     ws["!sheetViews"] = [{
-      showGridLines: false,
+      showGridLines: 0,
       pane: { state: "frozen", ySplit: 3, topLeftCell: "A4", activePane: "bottomLeft" }
     }];
 
@@ -341,39 +349,54 @@
         right:  { style: "thin", color: { rgb: "000000" } }
       };
     }
-    function setStyle(addr, s) { if (ws[addr]) ws[addr].s = s; }
     function ensureCell(r0, c0) {
       var addr = XLSX.utils.encode_cell({ r: r0, c: c0 });
-      if (!ws[addr]) ws[addr] = { t: "s", v: "" }; // tạo cell trống để áp style/border
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
       return addr;
     }
+    function setStyle(addr, s) { if (ws[addr]) ws[addr].s = s; }
     function numColorRgb(n) {
       if (n > 0) return "008000";
       if (n < 0) return "CC0000";
       return "808080";
     }
 
-    // A1 header (no border)
+    // Style nền trắng để “giết” gridlines ở các vùng ngoài bảng
+    var whiteNoBorder = {
+      fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    // Ép tạo cell + fill trắng cho row 2 (blank) và 2 row footer => không còn gridline
+    // row index (0-based): row2 = 1, footerBlank = maxRow-2, footer = maxRow-1
+    var rBlankTop = 1;
+    var rFooterBlank = maxRow - 2;
+    var rFooter = maxRow - 1;
+
+    for (var cc = 0; cc <= 4; cc++) {
+      setStyle(ensureCell(rBlankTop, cc), whiteNoBorder);
+      setStyle(ensureCell(rFooterBlank, cc), whiteNoBorder);
+      setStyle(ensureCell(rFooter, cc), whiteNoBorder);
+    }
+
+    // Header A1 style (fill nên cũng không có gridline)
     setStyle("A1", {
       font: { bold: true, sz: 16 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // Content area: A3:E{...} (KHÔNG gồm 2 dòng cuối report)
-    var footerRows = 2;
-    var contentStartR = 2;                 // row 3 (0-based)
-    var contentEndR   = (maxRow - 1) - footerRows; // 0-based last row of table content
+    // Content area ONLY: rows 3..(last data row), cols A..E (kẻ border ở đây)
+    var contentStartR = 2; // row 3
+    var contentEndR   = (maxRow - 1) - footerRows; // last row of table content (0-based)
     var cStart = 0, cEnd = 4;
 
-    // 1) ÉP TẠO CELL CHO TOÀN VÙNG NỘI DUNG => border sẽ đầy đủ
+    // Ép tạo cell cho toàn vùng content để border luôn đủ
     for (var rr = contentStartR; rr <= contentEndR; rr++) {
-      for (var cc = cStart; cc <= cEnd; cc++) {
-        ensureCell(rr, cc);
-      }
+      for (var cc = cStart; cc <= cEnd; cc++) ensureCell(rr, cc);
     }
 
-    // Row 3 header style
+    // Row 3 header style + border
     for (var cc = cStart; cc <= cEnd; cc++) {
       var addrH = XLSX.utils.encode_cell({ r: 2, c: cc });
       setStyle(addrH, {
@@ -384,7 +407,7 @@
       });
     }
 
-    // Row 4 totals style + color by sign
+    // Row 4 totals style + border + color theo số
     for (var cc = cStart; cc <= cEnd; cc++) {
       var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
       var styleT = {
@@ -393,7 +416,6 @@
         fill: { patternType: "solid", fgColor: { rgb: "F7F7F7" } },
         border: borderThin()
       };
-
       if (cc >= 1 && cc <= 4 && ws[addrT]) {
         ws[addrT].z = "0";
         var numT = Number(ws[addrT].v);
@@ -402,7 +424,7 @@
       setStyle(addrT, styleT);
     }
 
-    // Data rows style (row 5..contentEndR)
+    // Data rows style + border + zebra + coloring
     for (var rr = 4; rr <= contentEndR; rr++) {
       var isStripe = ((rr - 4) % 2 === 0);
       for (var cc = cStart; cc <= cEnd; cc++) {
@@ -414,7 +436,6 @@
         };
         if (isStripe) base.fill = { patternType: "solid", fgColor: { rgb: "FBFBFB" } };
 
-        // Check column O/X
         if (cc === 0) {
           var v = (ws[addrD].v || "").toString().trim();
           if (v === "O") base.font = { bold: true, color: { rgb: "008000" } };
@@ -422,25 +443,21 @@
           else base.font = { color: { rgb: "808080" } };
         }
 
-        // Score columns with +/-/0 colors
         if (cc >= 1 && cc <= 4) {
           ws[addrD].z = "0";
           var num = Number(ws[addrD].v);
-          if (!isNaN(num)) {
-            base.font = Object.assign({}, base.font || {}, { color: { rgb: numColorRgb(num) } });
-          } else {
-            base.font = Object.assign({}, base.font || {}, { color: { rgb: "808080" } });
-          }
+          base.font = Object.assign({}, base.font || {}, { color: { rgb: numColorRgb(isNaN(num) ? 0 : num) } });
         }
 
         ws[addrD].s = base;
       }
     }
 
-    // Footer cell style: right aligned, italic, NO border (ngoài vùng content)
-    var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 }); // E(last)
+    // Footer cell E (right aligned), vẫn fill trắng, không border => không gridline
+    var footerCellAddr = XLSX.utils.encode_cell({ r: rFooter, c: 4 });
     if (ws[footerCellAddr]) {
       ws[footerCellAddr].s = {
+        fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
         alignment: { horizontal: "right", vertical: "center" },
         font: { italic: true, sz: 11 }
       };
@@ -467,4 +484,3 @@
 
 </body>
 </html>
-
