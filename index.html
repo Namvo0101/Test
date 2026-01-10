@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title> Đánh bài cùng Bích Ngân ^_^ </title>
+<style>
+  body { text-align: center; margin: 0; padding: 0; }
+  #header { font-size: 10px; margin: 5px 0; }
+
+  table {
+    margin: auto;
+    border: 1px solid black;
+    border-collapse: collapse;
+    width: 90%;
+  }
+  th, td {
+    padding: 5px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  th { background-color: #f2f2f2; }
+
+  input[type="number"], input[type="text"] {
+    width: 20%;
+    text-align: center;
+  }
+
+  .score-positive { color: green; }
+  .score-negative { color: red; }
+  .score-neutral { color: grey; }
+  .check-positive { color: green; }
+  .check-negative { color: red; }
+  .total-score { font-size: 24px; font-weight: bold; }
+
+  button {
+    margin-top: 10px;
+    font-size: 30px;
+    padding: 10px 20px;
+  }
+
+  #scoreTable thead, #scoreTable thead th {
+    position: sticky;
+    top: 0;
+    background: #f2f2f2;
+    z-index: 10;
+    font-size: 30px;
+  }
+  #scoreTable tr:nth-child(2), #scoreTable tr:nth-child(2) td {
+    position: sticky;
+    top: 23px;
+    background: white;
+    z-index: 5;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="header">------ Nam Vo ------</div>
+
+<table id="scoreTable">
+  <thead>
+    <tr>
+      <th></th>
+      <th><input id="name-0" value="Bích Ngân" onblur="setName(0)"></th>
+      <th><input id="name-1" value="Phương Nam" onblur="setName(1)"></th>
+      <th><input id="name-2" value="Cẩm Lệ" onblur="setName(2)"></th>
+      <th><input id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
+    </tr>
+    <tr>
+      <td></td>
+      <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-1" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-2" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-3" class="score-neutral total-score">0</span></td>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<button onclick="enterPoints()">Enter Points</button>
+<button onclick="completeScores()">Complete</button>
+<button onclick="resetGame()">Reset</button>
+<br>
+<button onclick="exportExcel()">Export Excel</button>
+
+<!-- XLSX local -->
+<script src="./xlsx.min.js"></script>
+
+<script>
+var STORAGE_KEY = "scoreTable_save_v1";
+
+/* ================= CORE LOGIC (UNCHANGED) ================= */
+function setName(i){
+  var inp=document.getElementById("name-"+i);
+  inp.parentElement.innerHTML=inp.value;
+  saveGame();
+}
+function enterPoints(){
+  var t=document.getElementById("scoreTable");
+  var r=t.insertRow(-1);
+  r.insertCell(0).innerHTML="";
+  for(let i=0;i<4;i++){
+    let c=r.insertCell(i+1);
+    c.innerHTML=`<input type="number" class="score-input-${i}">`;
+    c.firstChild.oninput=saveGame;
+  }
+  saveGame();
+}
+function completeScores(){
+  let err=false;
+  for(let i=0;i<4;i++){
+    let sum=[...document.getElementsByClassName("score-input-"+i)]
+      .reduce((a,b)=>a+(+b.value||0),0);
+    let el=document.getElementById("total-score-"+i);
+    el.innerText=sum;
+    el.className="total-score "+(sum>0?"score-positive":sum<0?"score-negative":"score-neutral");
+  }
+  let t=document.getElementById("scoreTable");
+  for(let r=2;r<t.rows.length;r++){
+    let s=0;
+    for(let c=1;c<=4;c++) s+=+t.rows[r].cells[c].firstChild.value||0;
+    t.rows[r].cells[0].innerHTML=s===0?'<span class="check-positive">O</span>':'<span class="check-negative">X</span>',err|=s!==0;
+  }
+  saveGame();
+  if(err) alert("Nhập sai rồi bạn êyyyy ^_^");
+}
+function resetGame(){
+  if(confirm("Reset toàn bộ game?")){
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+}
+
+/* ================= SAVE / LOAD ================= */
+function saveGame(){
+  localStorage.setItem(STORAGE_KEY,document.getElementById("scoreTable").outerHTML);
+}
+function loadGame(){
+  let h=localStorage.getItem(STORAGE_KEY);
+  if(h) document.getElementById("scoreTable").outerHTML=h;
+}
+
+/* ================= EXPORT EXCEL (UPDATED) ================= */
+function exportExcel(){
+  if(!window.XLSX){
+    alert("Không load được thư viện XLSX.");
+    return;
+  }
+
+  completeScores();
+  let t=document.getElementById("scoreTable");
+
+  function pname(i){
+    let c=t.rows[0].cells[i+1];
+    let inp=c.querySelector("input");
+    return (inp?inp.value:c.textContent).trim();
+  }
+
+  let aoa=[];
+  aoa.push(["—— Nam Vo ——","","","",""]);
+  aoa.push([]);
+  aoa.push(["",pname(0),pname(1),pname(2),pname(3)]);
+  aoa.push(["TOTAL",
+    document.getElementById("total-score-0").innerText,
+    document.getElementById("total-score-1").innerText,
+    document.getElementById("total-score-2").innerText,
+    document.getElementById("total-score-3").innerText
+  ]);
+
+  for(let r=2;r<t.rows.length;r++){
+    let row=t.rows[r];
+    let vals=[];
+    for(let c=1;c<=4;c++) vals.push(+row.cells[c].firstChild.value||0);
+    aoa.push([(row.cells[0].textContent||"").trim(),...vals]);
+  }
+
+  // footer note
+  let now=new Date();
+  let stamp=`Report được tạo vào ngày ${now.getDate().toString().padStart(2,"0")}/`+
+            `${(now.getMonth()+1).toString().padStart(2,"0")}/`+
+            `${now.getFullYear()} `+
+            `${now.getHours().toString().padStart(2,"0")}:`+
+            `${now.getMinutes().toString().padStart(2,"0")}:`+
+            `${now.getSeconds().toString().padStart(2,"0")}`;
+
+  aoa.push([]);
+  aoa.push(["","","","",stamp]);
+
+  let wb=XLSX.utils.book_new();
+  let ws=XLSX.utils.aoa_to_sheet(aoa);
+
+  ws["!cols"]=[{wch:6},{wch:14},{wch:14},{wch:14},{wch:14}];
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:4}}];
+  ws["!sheetViews"]=[{showGridLines:false}];
+
+  // align footer right
+  let footerCell=XLSX.utils.encode_cell({r:aoa.length-1,c:4});
+  if(ws[footerCell]){
+    ws[footerCell].s={
+      alignment:{horizontal:"right"},
+      font:{italic:true}
+    };
+  }
+
+  XLSX.utils.book_append_sheet(wb,ws,"Scores");
+  XLSX.writeFile(wb,"scores.xlsx");
+}
+
+window.onload=loadGame;
+</script>
+
+</body>
+</html>
