@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title> Đánh bài cùng Bích Ngân ^_^ </title>
+<style>
+  body { text-align: center; margin: 0; padding: 0; }
+  #header { font-size: 10px; margin: 5px 0; }
+
+  table {
+    margin: auto;
+    border: 1px solid black;
+    border-collapse: collapse;
+    width: 90%;
+  }
+  th, td {
+    padding: 5px;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  th { background-color: #f2f2f2; }
+
+  input[type="number"], input[type="text"] {
+    width: 20%;
+    text-align: center;
+  }
+
+  .score-positive { color: green; }
+  .score-negative { color: red; }
+  .score-neutral { color: grey; }
+  .check-positive { color: green; }
+  .check-negative { color: red; }
+  .total-score { font-size: 24px; font-weight: bold; }
+
+  button {
+    margin-top: 10px;
+    font-size: 30px;
+    padding: 10px 20px;
+  }
+
+  #scoreTable thead, #scoreTable thead th {
+    position: sticky;
+    top: 0;
+    background: #f2f2f2;
+    z-index: 10;
+    font-size: 30px;
+  }
+  #scoreTable tr:nth-child(2), #scoreTable tr:nth-child(2) td {
+    position: sticky;
+    top: 23px;
+    background: white;
+    z-index: 5;
+  }
+</style>
+</head>
+
+<body>
+
+<div id="header">------ Nam Vo ------</div>
+
+<table id="scoreTable">
+  <thead>
+    <tr>
+      <th></th>
+      <th><input id="name-0" value="Bích Ngân" onblur="setName(0)"></th>
+      <th><input id="name-1" value="Phương Nam" onblur="setName(1)"></th>
+      <th><input id="name-2" value="Cẩm Lệ" onblur="setName(2)"></th>
+      <th><input id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
+    </tr>
+    <tr>
+      <td></td>
+      <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-1" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-2" class="score-neutral total-score">0</span></td>
+      <td><span id="total-score-3" class="score-neutral total-score">0</span></td>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<button onclick="enterPoints()">Enter Points</button>
+<button onclick="completeScores()">Complete</button>
+<button onclick="resetGame()">Reset</button>
+<br>
+<button onclick="exportExcel()">Export Excel</button>
+
+<!-- XLSX with style support -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js"></script>
+<script>
+  if (!window.XLSX) {
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    document.head.appendChild(s);
+  }
+</script>
+
+<script>
+var STORAGE_KEY = "scoreTable_save_v1";
+
+/* ================= SAVE / LOAD ================= */
+function saveGame() {
+  var table = document.getElementById("scoreTable");
+  var data = { headers: [], rows: [] };
+
+  for (var i = 0; i < 4; i++) {
+    var th = table.rows[0].cells[i + 1];
+    var inp = th.querySelector("input");
+    data.headers.push(inp ? { i:1, v: inp.value } : { i:0, v: th.innerHTML });
+  }
+
+  for (var r = 2; r < table.rows.length; r++) {
+    var row = table.rows[r];
+    var obj = { check: row.cells[0].innerHTML, scores: [] };
+    for (var c = 1; c <= 4; c++) obj.scores.push(row.cells[c].firstChild.value || "");
+    data.rows.push(obj);
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadGame() {
+  var raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  var data = JSON.parse(raw);
+  var table = document.getElementById("scoreTable");
+
+  for (var i = 0; i < 4; i++) {
+    var th = table.rows[0].cells[i + 1];
+    var h = data.headers[i];
+    th.innerHTML = h.i ? `<input id="name-${i}" value="${h.v}" onblur="setName(${i})">` : h.v;
+  }
+
+  while (table.rows.length > 2) table.deleteRow(-1);
+
+  data.rows.forEach(r => {
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = r.check;
+    r.scores.forEach((v,i)=>{
+      var c = row.insertCell(i+1);
+      c.innerHTML = `<input type="number" class="score-input-${i}" value="${v}">`;
+      c.firstChild.oninput = saveGame;
+    });
+  });
+
+  completeScores();
+}
+
+function resetGame() {
+  if (confirm("Reset toàn bộ game?")) {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+}
+
+/* ================= CORE LOGIC ================= */
+function setName(i) {
+  var inp = document.getElementById("name-" + i);
+  inp.parentElement.innerHTML = inp.value;
+  saveGame();
+}
+
+function enterPoints() {
+  var table = document.getElementById("scoreTable");
+  var row = table.insertRow(-1);
+  row.insertCell(0).innerHTML = "";
+  for (var i = 0; i < 4; i++) {
+    var c = row.insertCell(i+1);
+    c.innerHTML = `<input type="number" class="score-input-${i}">`;
+    c.firstChild.oninput = saveGame;
+  }
+  saveGame();
+}
+
+function completeScores() {
+  var error = false;
+
+  for (var i = 0; i < 4; i++) {
+    var sum = [...document.getElementsByClassName("score-input-"+i)]
+      .reduce((a,b)=>a+(+b.value||0),0);
+    var el = document.getElementById("total-score-"+i);
+    el.innerText = sum;
+    el.className = "total-score " + (sum>0?"score-positive":sum<0?"score-negative":"score-neutral");
+  }
+
+  var table = document.getElementById("scoreTable");
+  for (var r = 2; r < table.rows.length; r++) {
+    var s = 0;
+    for (var c = 1; c <= 4; c++) s += +table.rows[r].cells[c].firstChild.value || 0;
+    table.rows[r].cells[0].innerHTML =
+      s===0 ? '<span class="check-positive">O</span>' : (error=true,'<span class="check-negative">X</span>');
+  }
+
+  saveGame();
+  if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
+}
+
+/* ================= EXPORT EXCEL ================= */
+function exportExcel() {
+  if (!window.XLSX) {
+    alert("Không load được thư viện Excel.\nHãy mở file qua http/https hoặc đảm bảo có internet.");
+    return;
+  }
+
+  completeScores();
+  var table = document.getElementById("scoreTable");
+  var names = [...Array(4)].map((_,i)=>{
+    var th = table.rows[0].cells[i+1];
+    return th.querySelector("input")?.value || th.innerText;
+  });
+
+  var aoa = [
+    ["—— Nam Vo ——","","","","",""],
+    [],
+    ["",...names,"RowSum"]
+  ];
+
+  aoa.push(["TOTAL",
+    ...[0,1,2,3].map(i=>document.getElementById("total-score-"+i).innerText),
+    ""
+  ]);
+
+  for (var r = 2; r < table.rows.length; r++) {
+    var row = table.rows[r];
+    var vals = [];
+    var sum = 0;
+    for (var c = 1; c <= 4; c++) {
+      var v = +row.cells[c].firstChild.value || 0;
+      vals.push(v); sum+=v;
+    }
+    aoa.push([row.cells[0].innerText.trim(), ...vals, sum]);
+  }
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  ws["!merges"] = [{ s:{r:0,c:0}, e:{r:0,c:5} }];
+  ws["!sheetViews"] = [{ showGridLines:false }];
+  ws["!cols"] = [{wch:6},{wch:14},{wch:14},{wch:14},{wch:14},{wch:10}];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Scores");
+  XLSX.writeFile(wb, "scores.xlsx");
+}
+
+window.onload = loadGame;
+window.onbeforeunload = saveGame;
+</script>
+
+</body>
+</html>
