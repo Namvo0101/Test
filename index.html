@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Bảng ghi điểm</title>
+<style>
+    table {
+        width: 90%;
+        border-collapse: collapse;
+        margin: auto;
+    }
+    th, td {
+        border: 1px solid #000;
+        text-align: center;
+        padding: 6px;
+    }
+    thead th {
+        position: sticky;
+        top: 0;
+        background: #f2f2f2;
+        font-size: 30px;
+        z-index: 2;
+    }
+    #scoreTable tr:nth-child(2) {
+        position: sticky;
+        top: 23px;
+        background: #fff;
+        z-index: 1;
+    }
+    .total-score {
+        font-size: 22px;
+        font-weight: bold;
+    }
+    .score-positive {
+        color: green;
+    }
+    .score-negative {
+        color: red;
+    }
+    .score-neutral {
+        color: gray;
+    }
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+</style>
+</head>
+
+<body>
+
+<div style="text-align:center;">
+    <button onclick="enterPoints()">Enter Points</button>
+    <button onclick="completeScores()">Complete</button>
+    <button onclick="resetGame()">Reset</button>
+</div>
+
+<table id="scoreTable">
+    <thead>
+        <tr>
+            <th>✓</th>
+            <th><input type="text" id="name-0" value="Người 1" onblur="setName(0)"></th>
+            <th><input type="text" id="name-1" value="Người 2" onblur="setName(1)"></th>
+            <th><input type="text" id="name-2" value="Người 3" onblur="setName(2)"></th>
+            <th><input type="text" id="name-3" value="Người 4" onblur="setName(3)"></th>
+        </tr>
+        <tr>
+            <th>Tổng</th>
+            <th><span id="total-score-0" class="total-score score-neutral">0</span></th>
+            <th><span id="total-score-1" class="total-score score-neutral">0</span></th>
+            <th><span id="total-score-2" class="total-score score-neutral">0</span></th>
+            <th><span id="total-score-3" class="total-score score-neutral">0</span></th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+const STORAGE_KEY = "score_table_data";
+
+/* ===== LƯU & LOAD ===== */
+function saveData() {
+    const table = document.getElementById("scoreTable");
+    const data = {
+        headers: [],
+        rows: []
+    };
+
+    for (let i = 0; i < 4; i++) {
+        const th = table.rows[0].cells[i + 1];
+        data.headers.push({
+            text: th.textContent,
+            isInput: !!th.querySelector("input")
+        });
+    }
+
+    for (let r = 2; r < table.rows.length; r++) {
+        const row = table.rows[r];
+        const rowData = {
+            check: row.cells[0].innerHTML,
+            scores: []
+        };
+        for (let c = 1; c <= 4; c++) {
+            const input = row.cells[c].querySelector("input");
+            rowData.scores.push(input ? input.value : "");
+        }
+        data.rows.push(rowData);
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadData() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+
+    const data = JSON.parse(raw);
+    const table = document.getElementById("scoreTable");
+    const tbody = table.querySelector("tbody");
+
+    data.headers.forEach((h, i) => {
+        const th = table.rows[0].cells[i + 1];
+        if (h.isInput) {
+            th.innerHTML = `<input type="text" id="name-${i}" value="${h.text}" onblur="setName(${i})">`;
+        } else {
+            th.textContent = h.text;
+        }
+    });
+
+    data.rows.forEach(r => {
+        const row = tbody.insertRow();
+        row.insertCell().innerHTML = r.check || "";
+        r.scores.forEach((val, i) => {
+            const cell = row.insertCell();
+            cell.innerHTML = `<input type="number" class="score-input-${i}" value="${val}" oninput="saveData()">`;
+        });
+    });
+
+    completeScores();
+}
+
+/* ===== LOGIC CŨ ===== */
+function setName(index) {
+    const input = document.getElementById(`name-${index}`);
+    const name = input.value;
+    const th = input.parentElement;
+    th.innerHTML = name;
+    saveData();
+}
+
+function enterPoints() {
+    const table = document.getElementById("scoreTable").querySelector("tbody");
+    const row = table.insertRow();
+    row.insertCell().innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+        const cell = row.insertCell();
+        cell.innerHTML = `<input type="number" class="score-input-${i}" oninput="saveData()">`;
+    }
+    saveData();
+}
+
+function completeScores() {
+    let error = false;
+
+    for (let i = 0; i < 4; i++) {
+        const inputs = document.querySelectorAll(`.score-input-${i}`);
+        let total = 0;
+        inputs.forEach(inp => {
+            total += parseInt(inp.value) || 0;
+        });
+
+        const span = document.getElementById(`total-score-${i}`);
+        span.textContent = total;
+        span.className = "total-score " + 
+            (total > 0 ? "score-positive" :
+             total < 0 ? "score-negative" :
+             "score-neutral");
+    }
+
+    const table = document.getElementById("scoreTable");
+    for (let r = 2; r < table.rows.length; r++) {
+        const row = table.rows[r];
+        let sum = 0;
+        for (let c = 1; c <= 4; c++) {
+            const val = row.cells[c].querySelector("input").value;
+            sum += parseInt(val) || 0;
+        }
+        if (sum === 0) {
+            row.cells[0].innerHTML = "<span style='color:green;'>O</span>";
+        } else {
+            row.cells[0].innerHTML = "<span style='color:red;'>X</span>";
+            error = true;
+        }
+    }
+
+    saveData();
+
+    if (error) {
+        alert("Nhập sai rồi bạn êyyyy ^_^");
+    }
+}
+
+/* ===== RESET ===== */
+function resetGame() {
+    if (!confirm("Bạn có chắc muốn tạo game mới và xoá toàn bộ dữ liệu cũ không?")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+}
+
+window.addEventListener("load", loadData);
+window.addEventListener("beforeunload", saveData);
+</script>
+
+</body>
+</html>
