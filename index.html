@@ -277,6 +277,7 @@
     var rowCount = table.rows.length;
     var error = false;
 
+    // keep input colors in sync
     applyColorsToAllScoreInputs();
 
     for (var i = 0; i < 4; i++) {
@@ -305,7 +306,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ==================== PDF FONT LOADER (FIXED: attach to doc instance) ==================== */
+  /* ==================== PDF FONT LOADER (attach to doc instance) ==================== */
   let __pdfFontCache = null; // { regularB64, boldB64 }
 
   function __arrayBufferToBase64(buffer) {
@@ -345,7 +346,6 @@
   async function __attachVietnameseFontsToDoc(doc) {
     const cache = await __getPdfFontCache();
 
-    // IMPORTANT: attach to doc instance => avoids vFS undefined
     doc.addFileToVFS("NotoSans-Regular.ttf", cache.regularB64);
     doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
 
@@ -353,7 +353,7 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
-  /* ==================== EXPORT PDF (Vietnamese OK) ==================== */
+  /* ==================== EXPORT PDF (UPDATED timestamp placement) ==================== */
   async function exportPDF() {
     completeScores();
 
@@ -467,22 +467,36 @@
       }
     });
 
-    // Footer timestamp tiếng Việt (bottom-right)
+    // Timestamp: đặt ngay sau bảng, cách 2 dòng, căn phải + thêm "bởi Nam Võ"
     const now = new Date();
     const pad2 = (n) => String(n).padStart(2, "0");
     const stamp =
       "Report được tạo vào ngày " +
       pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() + " " +
-      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
+      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds()) +
+      " bởi Nam Võ";
 
-    const lastPage = doc.internal.getNumberOfPages();
-    doc.setPage(lastPage);
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const rightMargin = 40;
+    const topMargin = 50;
+
+    // jsPDF-AutoTable exposes lastAutoTable.finalY
+    const lastY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY : 80;
+
+    // "cách bảng 2 dòng"
+    const lineHeight = 14;
+    let y = lastY + (2 * lineHeight);
+
+    // nếu sắp vượt trang thì xuống trang mới
+    if (y > pageH - 40) {
+      doc.addPage();
+      y = topMargin;
+    }
 
     doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.text(stamp, pageW - 40, pageH - 30, { align: "right" });
+    doc.text(stamp, pageW - rightMargin, y, { align: "right" });
 
     const filename =
       "scores_" +
