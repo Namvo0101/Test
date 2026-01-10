@@ -306,13 +306,63 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ==================== EXPORT PDF (replaces Excel) ==================== */
-  function exportPDF() {
+  /* ==================== PDF FONT LOADER (Vietnamese Unicode) ==================== */
+  let __pdfFontsLoaded = false;
+
+  function __arrayBufferToBase64(buffer) {
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  async function __loadPdfFontsIfNeeded() {
+    if (__pdfFontsLoaded) return;
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error("jsPDF chưa load");
+    }
+
+    const regularUrl = "./fonts/NotoSans-Regular.ttf";
+    const boldUrl = "./fonts/NotoSans-Bold.ttf";
+
+    const [regBuf, boldBuf] = await Promise.all([
+      fetch(regularUrl).then(r => {
+        if (!r.ok) throw new Error("Không tải được font: " + regularUrl);
+        return r.arrayBuffer();
+      }),
+      fetch(boldUrl).then(r => {
+        if (!r.ok) throw new Error("Không tải được font: " + boldUrl);
+        return r.arrayBuffer();
+      })
+    ]);
+
+    const regB64 = __arrayBufferToBase64(regBuf);
+    const boldB64 = __arrayBufferToBase64(boldBuf);
+
+    const { jsPDF } = window.jspdf;
+
+    jsPDF.API.addFileToVFS("NotoSans-Regular.ttf", regB64);
+    jsPDF.API.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+
+    jsPDF.API.addFileToVFS("NotoSans-Bold.ttf", boldB64);
+    jsPDF.API.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+
+    __pdfFontsLoaded = true;
+  }
+
+  /* ==================== EXPORT PDF (Vietnamese OK) ==================== */
+  async function exportPDF() {
     // keep behavior: export uses current computed state (may alert if errors)
     completeScores();
 
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert("Chưa load được thư viện jsPDF.\nHãy kiểm tra:\n/libs/jspdf.umd.min.js\n/libs/jspdf.plugin.autotable.min.js");
+    try {
+      await __loadPdfFontsIfNeeded();
+    } catch (e) {
+      alert("Lỗi load font PDF: " + (e && e.message ? e.message : e));
       return;
     }
 
@@ -331,12 +381,12 @@
 
     const names = [0, 1, 2, 3].map(getPlayerName);
 
-    // Header (same as Excel header row)
-    doc.setFont("helvetica", "bold");
+    // Header
+    doc.setFont("NotoSans", "bold");
     doc.setFontSize(16);
     doc.text("—— Nam Vo ——", doc.internal.pageSize.getWidth() / 2, 50, { align: "center" });
 
-    // Table content: 5 columns (check + 4 players), NO RowSum
+    // Table: 5 columns (check + 4 players)
     const head = [["", names[0], names[1], names[2], names[3]]];
 
     const totals = [0, 1, 2, 3].map(i => document.getElementById("total-score-" + i).innerText);
@@ -352,40 +402,40 @@
       body.push([check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    // Excel-like sign colors
     function signColor(n) {
-      if (n > 0) return [0, 128, 0];     // green
-      if (n < 0) return [204, 0, 0];     // red
-      return [128, 128, 128];            // grey
+      if (n > 0) return [0, 128, 0];
+      if (n < 0) return [204, 0, 0];
+      return [128, 128, 128];
     }
 
-    // Draw table with grid borders + zebra like Excel export
     doc.autoTable({
       startY: 80,
       head,
       body,
       theme: "grid",
       styles: {
+        font: "NotoSans",
+        fontStyle: "normal",
         halign: "center",
         valign: "middle",
         fontSize: 11,
         cellPadding: 6
       },
       headStyles: {
+        font: "NotoSans",
+        fontStyle: "bold",
         fillColor: [237, 237, 237],
-        textColor: 0,
-        fontStyle: "bold"
+        textColor: 0
       },
-      alternateRowStyles: {
-        fillColor: [251, 251, 251]
-      },
+      alternateRowStyles: { fillColor: [251, 251, 251] },
       didParseCell: function (data) {
         const row = data.row;
         const col = data.column;
         const cell = data.cell;
 
-        // TOTAL row (body row 0): same fill as Excel totals row
+        // TOTAL row (body row 0)
         if (data.section === "body" && row.index === 0) {
+          cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
           cell.styles.fillColor = [247, 247, 247];
           if (col.index >= 1) {
@@ -396,15 +446,16 @@
           }
         }
 
-        // Data rows: score columns colored by sign (same as Excel export)
+        // Data rows: color by sign for score columns
         if (data.section === "body" && row.index >= 1 && col.index >= 1) {
           const n = parseInt(cell.raw, 10) || 0;
           cell.styles.textColor = signColor(n);
         }
 
-        // Check column: O green, X red
+        // Check column O/X
         if (data.section === "body" && col.index === 0) {
           const v = String(cell.raw || "").trim();
+          cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
           if (v === "O") cell.styles.textColor = [0, 128, 0];
           else if (v === "X") cell.styles.textColor = [204, 0, 0];
@@ -413,7 +464,7 @@
       }
     });
 
-    // Footer timestamp (same text as Excel export, bottom-right)
+    // Footer timestamp tiếng Việt (bottom-right)
     const now = new Date();
     const pad2 = (n) => String(n).padStart(2, "0");
     const stamp =
@@ -424,13 +475,12 @@
     const lastPage = doc.internal.getNumberOfPages();
     doc.setPage(lastPage);
 
-    doc.setFont("helvetica", "italic");
+    doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     doc.text(stamp, pageW - 40, pageH - 30, { align: "right" });
 
-    // Filename similar to Excel filename (but PDF)
     const filename =
       "scores_" +
       now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate()) + "_" +
