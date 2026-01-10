@@ -83,7 +83,7 @@
       <th><input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
     </tr>
 
-    <!-- vẫn giữ để tính/export, chỉ ẩn bằng CSS -->
+    <!-- vẫn giữ trong DOM để tính total/export, chỉ ẩn bằng CSS -->
     <tr>
       <td></td>
       <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
@@ -99,17 +99,17 @@
 <button onclick="completeScores()">Complete</button>
 <button onclick="resetGame()">Reset</button>
 <br>
-<button onclick="exportExcel()">Export Excel</button>
+<button onclick="exportPDF()">Export PDF</button>
 
-<!-- XLSX local (xlsx-js-style) -->
-<script src="./xlsx.min.js"></script>
+<!-- PDF libs (local) -->
+<script src="./libs/jspdf.umd.min.js"></script>
+<script src="./libs/jspdf.plugin.autotable.min.js"></script>
 
 <script>
   var STORAGE_KEY = "scoreTable_save_v1";
 
-  /* ================== NEW: Color rule for each input ================== */
+  /* ================== version_5: live sign color for each input ================== */
   function applySignColorToInput(input) {
-    // giữ class score-input-* và chỉ thay 3 class màu
     input.classList.remove("score-positive", "score-negative", "score-neutral");
 
     var raw = (input.value || "").trim();
@@ -121,7 +121,6 @@
   }
 
   function bindScoreInput(input) {
-    // tránh bind trùng nếu gọi nhiều lần
     if (input.dataset && input.dataset.bound === "1") {
       applySignColorToInput(input);
       return;
@@ -171,7 +170,6 @@
   }
 
   function attachAutoSaveToExistingInputs() {
-    // version_4: giờ dùng bindScoreInput để vừa save vừa tô màu
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) {
@@ -187,6 +185,7 @@
     var table = document.getElementById("scoreTable");
     var trimmed = String(raw).trim();
 
+    // JSON format
     if (trimmed[0] === "{") {
       try {
         var data = JSON.parse(trimmed);
@@ -219,12 +218,13 @@
             });
           }
 
-          completeScores(); // complete sẽ gọi saveGame()
+          completeScores();
           return;
         }
       } catch (e) {}
     }
 
+    // HTML fallback
     if (trimmed[0] === "<" && trimmed.toLowerCase().indexOf("<table") !== -1) {
       try {
         var wrapper = document.createElement("div");
@@ -277,7 +277,7 @@
     var rowCount = table.rows.length;
     var error = false;
 
-    // NEW: đảm bảo màu input luôn đúng (kể cả khi load)
+    // keep input colors in sync
     applyColorsToAllScoreInputs();
 
     for (var i = 0; i < 4; i++) {
@@ -306,188 +306,138 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ==================== EXPORT EXCEL (version_4 kept) ==================== */
-  function exportExcel() {
-    if (!window.XLSX) {
-      alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
+  /* ==================== EXPORT PDF (replaces Excel) ==================== */
+  function exportPDF() {
+    // keep behavior: export uses current computed state (may alert if errors)
+    completeScores();
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("Chưa load được thư viện jsPDF.\nHãy kiểm tra:\n/libs/jspdf.umd.min.js\n/libs/jspdf.plugin.autotable.min.js");
       return;
     }
 
-    completeScores();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
 
-    var table = document.getElementById("scoreTable");
+    const table = document.getElementById("scoreTable");
+
     function getPlayerName(i) {
-      var cell = table.rows[0] && table.rows[0].cells[i + 1];
+      const cell = table.rows[0] && table.rows[0].cells[i + 1];
       if (!cell) return "";
-      var inp = cell.querySelector("input");
-      var v = inp ? inp.value : (cell.textContent || "");
-      return (v || "").toString().trim();
-    }
-    var names = [getPlayerName(0), getPlayerName(1), getPlayerName(2), getPlayerName(3)];
-
-    var aoa = [];
-    aoa.push(["—— Nam Vo ——", "", "", "", ""]);
-    aoa.push(["", "", "", "", ""]);
-    aoa.push(["", names[0], names[1], names[2], names[3]]);
-    aoa.push([
-      "TOTAL",
-      document.getElementById("total-score-0").innerText,
-      document.getElementById("total-score-1").innerText,
-      document.getElementById("total-score-2").innerText,
-      document.getElementById("total-score-3").innerText
-    ]);
-
-    for (var r = 2; r < table.rows.length; r++) {
-      var row = table.rows[r];
-      var check = (row.cells[0].textContent || "").trim();
-      var vals = [];
-      for (var c = 1; c <= 4; c++) vals.push(parseInt(row.cells[c].firstChild.value) || 0);
-      aoa.push([check, vals[0], vals[1], vals[2], vals[3]]);
+      const inp = cell.querySelector("input");
+      const v = inp ? inp.value : (cell.textContent || "");
+      return String(v || "").trim();
     }
 
-    var now = new Date();
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    var stamp = "Report được tạo vào ngày " +
-      pad2(now.getDate()) + "/" + pad2(now.getMonth()+1) + "/" + now.getFullYear() + " " +
-      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
+    const names = [0, 1, 2, 3].map(getPlayerName);
 
-    aoa.push(["", "", "", "", ""]);
-    aoa.push(["", "", "", "", stamp]);
+    // Header (same as Excel header row)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("—— Nam Vo ——", doc.internal.pageSize.getWidth() / 2, 50, { align: "center" });
 
-    var wb = XLSX.utils.book_new();
-    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    // Table content: 5 columns (check + 4 players), NO RowSum
+    const head = [["", names[0], names[1], names[2], names[3]]];
 
-    var maxRow = aoa.length;
-    var footerRows = 2;
-    var contentStartR = 2; // row 3 (0-based)
-    var contentEndR   = (maxRow - 1) - footerRows; // last content row (0-based)
+    const totals = [0, 1, 2, 3].map(i => document.getElementById("total-score-" + i).innerText);
 
-    ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
+    const body = [];
+    body.push(["TOTAL", totals[0], totals[1], totals[2], totals[3]]);
 
-    ws["!rows"] = ws["!rows"] || [];
-    ws["!rows"][0] = { hpt: 24 };
-    ws["!rows"][1] = { hpt: 10 };
-    ws["!rows"][2] = { hpt: 18 };
-    ws["!rows"][3] = { hpt: 18 };
-
-    ws["!merges"] = ws["!merges"] || [];
-    ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
-
-    wb.Workbook = wb.Workbook || {};
-    wb.Workbook.Views = [{ showGridLines: false }];
-
-    ws["!sheetViews"] = [{
-      showGridLines: false,
-      pane: { state: "frozen", ySplit: 3, topLeftCell: "A4", activePane: "bottomLeft" }
-    }];
-
-    ws["!autofilter"] = { ref: "A3:E3" };
-
-    function borderThin() {
-      return {
-        top:    { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left:   { style: "thin", color: { rgb: "000000" } },
-        right:  { style: "thin", color: { rgb: "000000" } }
-      };
-    }
-    function ensureCell(r0, c0) {
-      var addr = XLSX.utils.encode_cell({ r: r0, c: c0 });
-      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
-      return addr;
-    }
-    function setStyle(addr, s) { if (ws[addr]) ws[addr].s = s; }
-    function numColorRgb(n) {
-      if (n > 0) return "008000";
-      if (n < 0) return "CC0000";
-      return "808080";
+    for (let r = 2; r < table.rows.length; r++) {
+      const row = table.rows[r];
+      const check = (row.cells[0].textContent || "").trim();
+      const vals = [];
+      for (let c = 1; c <= 4; c++) vals.push(String(parseInt(row.cells[c].firstChild.value) || 0));
+      body.push([check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    setStyle("A1", {
-      font: { bold: true, sz: 16 },
-      alignment: { horizontal: "center", vertical: "center" },
-      fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
+    // Excel-like sign colors
+    function signColor(n) {
+      if (n > 0) return [0, 128, 0];     // green
+      if (n < 0) return [204, 0, 0];     // red
+      return [128, 128, 128];            // grey
+    }
+
+    // Draw table with grid borders + zebra like Excel export
+    doc.autoTable({
+      startY: 80,
+      head,
+      body,
+      theme: "grid",
+      styles: {
+        halign: "center",
+        valign: "middle",
+        fontSize: 11,
+        cellPadding: 6
+      },
+      headStyles: {
+        fillColor: [237, 237, 237],
+        textColor: 0,
+        fontStyle: "bold"
+      },
+      alternateRowStyles: {
+        fillColor: [251, 251, 251]
+      },
+      didParseCell: function (data) {
+        const row = data.row;
+        const col = data.column;
+        const cell = data.cell;
+
+        // TOTAL row (body row 0): same fill as Excel totals row
+        if (data.section === "body" && row.index === 0) {
+          cell.styles.fontStyle = "bold";
+          cell.styles.fillColor = [247, 247, 247];
+          if (col.index >= 1) {
+            const n = parseInt(cell.raw, 10) || 0;
+            cell.styles.textColor = signColor(n);
+          } else {
+            cell.styles.textColor = 0;
+          }
+        }
+
+        // Data rows: score columns colored by sign (same as Excel export)
+        if (data.section === "body" && row.index >= 1 && col.index >= 1) {
+          const n = parseInt(cell.raw, 10) || 0;
+          cell.styles.textColor = signColor(n);
+        }
+
+        // Check column: O green, X red
+        if (data.section === "body" && col.index === 0) {
+          const v = String(cell.raw || "").trim();
+          cell.styles.fontStyle = "bold";
+          if (v === "O") cell.styles.textColor = [0, 128, 0];
+          else if (v === "X") cell.styles.textColor = [204, 0, 0];
+          else cell.styles.textColor = [128, 128, 128];
+        }
+      }
     });
 
-    // create all cells in content area so borders are complete
-    for (var rr = contentStartR; rr <= contentEndR; rr++) {
-      for (var cc = 0; cc <= 4; cc++) ensureCell(rr, cc);
-    }
+    // Footer timestamp (same text as Excel export, bottom-right)
+    const now = new Date();
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const stamp =
+      "Report được tạo vào ngày " +
+      pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() + " " +
+      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
 
-    // Row 3 header
-    for (var cc = 0; cc <= 4; cc++) {
-      var addrH = XLSX.utils.encode_cell({ r: 2, c: cc });
-      setStyle(addrH, {
-        font: { bold: true },
-        alignment: { horizontal: "center", vertical: "center" },
-        fill: { patternType: "solid", fgColor: { rgb: "EDEDED" } },
-        border: borderThin()
-      });
-    }
+    const lastPage = doc.internal.getNumberOfPages();
+    doc.setPage(lastPage);
 
-    // Row 4 totals + color by sign
-    for (var cc = 0; cc <= 4; cc++) {
-      var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
-      var styleT = {
-        font: { bold: true },
-        alignment: { horizontal: "center", vertical: "center" },
-        fill: { patternType: "solid", fgColor: { rgb: "F7F7F7" } },
-        border: borderThin()
-      };
-      if (cc >= 1 && cc <= 4 && ws[addrT]) {
-        ws[addrT].z = "0";
-        var numT = Number(ws[addrT].v);
-        styleT.font = Object.assign({}, styleT.font, { color: { rgb: numColorRgb(isNaN(numT) ? 0 : numT) } });
-      }
-      setStyle(addrT, styleT);
-    }
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.text(stamp, pageW - 40, pageH - 30, { align: "right" });
 
-    // Data rows
-    for (var rr = 4; rr <= contentEndR; rr++) {
-      var isStripe = ((rr - 4) % 2 === 0);
-      for (var cc = 0; cc <= 4; cc++) {
-        var addrD = XLSX.utils.encode_cell({ r: rr, c: cc });
-
-        var base = {
-          alignment: { horizontal: "center", vertical: "center" },
-          border: borderThin()
-        };
-        if (isStripe) base.fill = { patternType: "solid", fgColor: { rgb: "FBFBFB" } };
-
-        if (cc === 0) {
-          var v = (ws[addrD].v || "").toString().trim();
-          if (v === "O") base.font = { bold: true, color: { rgb: "008000" } };
-          else if (v === "X") base.font = { bold: true, color: { rgb: "CC0000" } };
-          else base.font = { color: { rgb: "808080" } };
-        }
-
-        if (cc >= 1 && cc <= 4) {
-          ws[addrD].z = "0";
-          var num = Number(ws[addrD].v);
-          base.font = Object.assign({}, base.font || {}, { color: { rgb: numColorRgb(isNaN(num) ? 0 : num) } });
-        }
-
-        ws[addrD].s = base;
-      }
-    }
-
-    // Footer cell (E last row): right aligned, italic, no border
-    var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 });
-    ensureCell(maxRow - 1, 4);
-    ws[footerCellAddr].s = {
-      alignment: { horizontal: "right", vertical: "center" },
-      font: { italic: true, sz: 11 }
-    };
-
-    XLSX.utils.book_append_sheet(wb, ws, "Scores");
-
-    var filename =
+    // Filename similar to Excel filename (but PDF)
+    const filename =
       "scores_" +
       now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate()) + "_" +
       pad2(now.getHours()) + pad2(now.getMinutes()) +
-      ".xlsx";
+      ".pdf";
 
-    XLSX.writeFile(wb, filename);
+    doc.save(filename);
   }
 
   window.addEventListener("load", function() {
