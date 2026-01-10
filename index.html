@@ -21,14 +21,21 @@
     --radius: 16px;
   }
 
+  /* ✅ chặn “tràn ngang 1 chút xíu” do shadow/subpixel */
+  * , *::before, *::after { box-sizing: border-box; }
   html, body{
     width: 100%;
-    overflow-x: hidden; /* ✅ chặn cuộn ngang toàn trang */
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: clip; /* ưu tiên clip */
+  }
+  @supports not (overflow: clip){
+    html, body{ overflow-x: hidden; }
   }
 
-  body {
+  body{
     text-align: center;
-    margin: 0;
     padding: 14px 10px 26px;
     background: var(--bg);
     color: var(--text);
@@ -46,6 +53,10 @@
     max-width: 980px;
     width: 100%;
     margin: 0 auto;
+    overflow-x: clip; /* ✅ thêm 1 lớp chặn overflow */
+  }
+  @supports not (overflow: clip){
+    .wrap{ overflow-x: hidden; }
   }
 
   .table-card{
@@ -55,34 +66,27 @@
     box-shadow: var(--shadow);
     padding: 10px;
     width: 100%;
-    box-sizing: border-box;
     overflow: hidden;
   }
 
   .table-scroll{
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;                 /* nếu màn rất nhỏ vẫn cuộn trong khung */
+    overflow-x: auto;                 /* nếu cần cuộn thì chỉ cuộn trong khung */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
 
-  table {
+  table{
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;              /* ✅ cột co giãn theo màn hình */
+    table-layout: fixed;              /* ✅ cột co giãn theo màn */
     min-width: 0;                     /* ✅ không ép rộng hơn viewport */
   }
 
-  /* chỉ giữ min-width cho màn lớn để nhìn thoáng */
-  @media (min-width: 720px){
-    table{ min-width: 720px; }
-  }
-
-  th, td {
+  th, td{
     padding: 10px 8px;
     text-align: center;
-    box-sizing: border-box;
     border-bottom: 1px solid var(--line);
     vertical-align: middle;
   }
@@ -92,7 +96,6 @@
     border-bottom: 1px solid var(--line-strong);
   }
 
-  /* zebra */
   tbody tr:nth-child(even){
     background: rgba(0,0,0,0.02);
   }
@@ -104,7 +107,10 @@
     background: linear-gradient(0deg, var(--err-bg), var(--err-bg));
   }
 
-  /* input */
+  tbody tr:hover{
+    filter: brightness(0.99);
+  }
+
   input[type="number"], input[type="text"]{
     width: 100%;
     max-width: 220px;
@@ -113,7 +119,6 @@
     border: 1px solid var(--line);
     outline: none;
     background: #fff;
-    box-sizing: border-box;
     text-align: center;
     font-size: 18px;
     transition: box-shadow .15s ease, border-color .15s ease;
@@ -132,14 +137,12 @@
   .check-negative { color: red; font-weight: 800; }
   .total-score { font-size: 24px; font-weight: bold; }
 
-  /* controls */
   .controls{
     margin: 14px auto 0;
     display: grid;
     gap: 10px;
     justify-content: center;
   }
-
   .controls-row{
     display: flex;
     gap: 12px;
@@ -167,26 +170,26 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* sticky header */
-  #scoreTable thead, #scoreTable thead th {
+  #scoreTable thead, #scoreTable thead th{
     position: sticky;
     top: 0;
     z-index: 10;
     font-size: 26px;
   }
 
-  /* Ẩn dòng Total trên web */
-  #scoreTable thead tr:nth-child(2) {
+  #scoreTable thead tr:nth-child(2){
     display: none;
   }
 
-  /* ✅ Mobile tune: giảm padding/font, tránh tràn */
+  /* ✅ Mobile: giảm shadow (shadow là nguyên nhân hay gây overflow “tí xíu” trên iOS) */
   @media (max-width: 600px){
     body{ padding: 12px 8px 22px; }
     #scoreTable thead, #scoreTable thead th { font-size: 20px; }
     th, td { padding: 8px 6px; }
     input[type="number"], input[type="text"]{ font-size: 16px; padding: 7px 8px; max-width: none; }
     button { font-size: 22px; padding: 10px 14px; border-radius: 14px; }
+    .table-card{ box-shadow: none; }     /* ✅ bỏ shadow trên mobile để hết tràn ngang */
+    button{ box-shadow: none; }          /* ✅ bỏ shadow nút trên mobile */
   }
 </style>
 </head>
@@ -553,10 +556,7 @@
         textColor: 0
       },
       alternateRowStyles: { fillColor: [251, 251, 251] },
-      columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 48 }
-      },
+      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 } },
       didParseCell: function (data) {
         const row = data.row;
         const col = data.column;
@@ -584,7 +584,6 @@
           const v = String(cell.raw || "").trim();
           cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
-
           if (v === "O") cell.styles.textColor = [0, 128, 0];
           else if (v === "X") cell.styles.textColor = [204, 0, 0];
           else cell.styles.textColor = 0;
