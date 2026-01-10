@@ -312,9 +312,9 @@
     var wb = XLSX.utils.book_new();
     var ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    var maxRow = aoa.length;      // 1-based row count
-    var footerRows = 2;           // blank + report
-    var contentStartR = 2;        // row 3 (0-based)
+    var maxRow = aoa.length;
+    var footerRows = 2;
+    var contentStartR = 2; // row 3 (0-based)
     var contentEndR   = (maxRow - 1) - footerRows; // last content row (0-based)
 
     ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
@@ -328,7 +328,7 @@
     ws["!merges"] = ws["!merges"] || [];
     ws["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 4 } });
 
-    // Tắt gridlines đúng chuẩn Excel: workbook view + sheet view
+    // Tắt gridlines: workbook view + sheet view (KHÔNG fill trắng nữa)
     wb.Workbook = wb.Workbook || {};
     wb.Workbook.Views = [{ showGridLines: false }];
 
@@ -359,33 +359,14 @@
       return "808080";
     }
 
-    // === “Kill gridline” chắc chắn: fill trắng một vùng lớn quanh bảng ===
-    // Bạn có thể tăng 2 số này nếu muốn vùng trắng rộng hơn.
-    var PAD_COLS = 11; // A..K (0..10)
-    var PAD_ROWS = 30; // thêm 30 dòng dưới cùng
-    var fillToRow = (maxRow - 1) + PAD_ROWS; // 0-based last row to fill
-    var fillToCol = PAD_COLS - 1;
-
-    var whiteFillNoBorder = {
-      fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
-      alignment: { horizontal: "center", vertical: "center" }
-    };
-
-    for (var rr = 0; rr <= fillToRow; rr++) {
-      for (var cc = 0; cc <= fillToCol; cc++) {
-        setStyle(ensureCell(rr, cc), whiteFillNoBorder);
-      }
-    }
-
-    // Header A1 (fill xám nhạt)
+    // Header A1 style
     setStyle("A1", {
       font: { bold: true, sz: 16 },
       alignment: { horizontal: "center", vertical: "center" },
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // === Kẻ BORDER CHỈ cho vùng nội dung A3:E... ===
-    // Ép tạo cell trong content A..E
+    // Create all cells in content area so borders are complete
     for (var rr = contentStartR; rr <= contentEndR; rr++) {
       for (var cc = 0; cc <= 4; cc++) ensureCell(rr, cc);
     }
@@ -401,7 +382,7 @@
       });
     }
 
-    // Row 4 totals + color theo số
+    // Row 4 totals + color by sign
     for (var cc = 0; cc <= 4; cc++) {
       var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
       var styleT = {
@@ -418,7 +399,7 @@
       setStyle(addrT, styleT);
     }
 
-    // Data rows: zebra + O/X + number colors
+    // Data rows
     for (var rr = 4; rr <= contentEndR; rr++) {
       var isStripe = ((rr - 4) % 2 === 0);
       for (var cc = 0; cc <= 4; cc++) {
@@ -447,15 +428,13 @@
       }
     }
 
-    // Footer cell (E last row): right aligned, italic, NO border (đã fill trắng sẵn)
+    // Footer report cell (E last row): right aligned, italic, no border
     var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 });
-    if (ws[footerCellAddr]) {
-      ws[footerCellAddr].s = {
-        fill: { patternType: "solid", fgColor: { rgb: "FFFFFF" } },
-        alignment: { horizontal: "right", vertical: "center" },
-        font: { italic: true, sz: 11 }
-      };
-    }
+    ensureCell(maxRow - 1, 4);
+    ws[footerCellAddr].s = {
+      alignment: { horizontal: "right", vertical: "center" },
+      font: { italic: true, sz: 11 }
+    };
 
     XLSX.utils.book_append_sheet(wb, ws, "Scores");
 
