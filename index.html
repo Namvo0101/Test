@@ -62,7 +62,7 @@
     font-size: 30px;
   }
 
-  /* (UPDATE #1) Ẩn dòng Total trên web */
+  /* (UPDATE) Ẩn dòng Total trên web */
   #scoreTable thead tr:nth-child(2) {
     display: none;
   }
@@ -81,6 +81,7 @@
       <th><input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)"></th>
       <th><input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)"></th>
     </tr>
+    <!-- vẫn giữ trong DOM để tính total/export excel, chỉ ẩn bằng CSS -->
     <tr>
       <td></td>
       <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
@@ -108,7 +109,6 @@
     var table = document.getElementById("scoreTable");
     var data = { headers: [], rows: [] };
 
-    // headers (names)
     for (var i = 0; i < 4; i++) {
       var th = table.rows[0].cells[i + 1];
       var input = th.querySelector("input");
@@ -116,7 +116,6 @@
       else data.headers.push({ isInput: false, value: th.innerHTML });
     }
 
-    // rows (from row index 2)
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
       var rowObj = { check: row.cells[0].innerHTML, scores: [] };
@@ -139,7 +138,6 @@
     }
   }
 
-  // loadGame tự nhận diện JSON/HTML để tránh lỗi in JSON ra màn hình
   function loadGame() {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
@@ -147,12 +145,10 @@
     var table = document.getElementById("scoreTable");
     var trimmed = String(raw).trim();
 
-    // Case A: JSON dạng {headers, rows}
     if (trimmed[0] === "{") {
       try {
         var data = JSON.parse(trimmed);
         if (data && data.headers && data.rows) {
-          // Restore headers
           for (var i = 0; i < 4; i++) {
             var th = table.rows[0].cells[i + 1];
             var h = data.headers[i];
@@ -163,10 +159,8 @@
             }
           }
 
-          // Clear existing rows
           while (table.rows.length > 2) table.deleteRow(-1);
 
-          // Restore rows
           if (data.rows && data.rows.length) {
             data.rows.forEach(function(r) {
               var row = table.insertRow(-1);
@@ -190,7 +184,6 @@
       } catch (e) {}
     }
 
-    // Case B: lỡ lưu dạng HTML <table...>
     if (trimmed[0] === "<" && trimmed.toLowerCase().indexOf("<table") !== -1) {
       try {
         var wrapper = document.createElement("div");
@@ -206,7 +199,6 @@
       } catch (e2) {}
     }
 
-    // Case C: dữ liệu rác
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -269,7 +261,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  // Export Excel: bỏ RowSum + footer report + (UPDATE #2) TOTAL row có màu theo số
+  // ===== Export Excel FIX: ép tạo cell cho toàn vùng bảng để border đủ =====
   function exportExcel() {
     if (!window.XLSX) {
       alert("Không export được vì chưa load được thư viện XLSX.\nHãy chắc chắn repo có file xlsx.min.js và đang mở bằng GitHub Pages.");
@@ -279,7 +271,6 @@
     completeScores();
 
     var table = document.getElementById("scoreTable");
-
     function getPlayerName(i) {
       var cell = table.rows[0] && table.rows[0].cells[i + 1];
       if (!cell) return "";
@@ -287,21 +278,20 @@
       var v = inp ? inp.value : (cell.textContent || "");
       return (v || "").toString().trim();
     }
-
     var names = [getPlayerName(0), getPlayerName(1), getPlayerName(2), getPlayerName(3)];
 
-    // AOA has 5 columns: A..E (check + 4 players)
+    // AOA 5 cột: A..E
     var aoa = [];
-    aoa.push(["—— Nam Vo ——", "", "", "", ""]);     // row 1 merged A1:E1
-    aoa.push(["", "", "", "", ""]);                 // row 2 blank
-    aoa.push(["", names[0], names[1], names[2], names[3]]); // row 3 header
+    aoa.push(["—— Nam Vo ——", "", "", "", ""]);                 // 1
+    aoa.push(["", "", "", "", ""]);                             // 2
+    aoa.push(["", names[0], names[1], names[2], names[3]]);     // 3
     aoa.push([
       "TOTAL",
       document.getElementById("total-score-0").innerText,
       document.getElementById("total-score-1").innerText,
       document.getElementById("total-score-2").innerText,
       document.getElementById("total-score-3").innerText
-    ]); // row 4 totals
+    ]);                                                         // 4
 
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
@@ -311,21 +301,20 @@
       aoa.push([check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    // footer note
+    // footer
     var now = new Date();
     function pad2(n){ return String(n).padStart(2,"0"); }
     var stamp = "Report được tạo vào ngày " +
       pad2(now.getDate()) + "/" + pad2(now.getMonth()+1) + "/" + now.getFullYear() + " " +
       pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
 
-    aoa.push(["", "", "", "", ""]);        // blank row
-    aoa.push(["", "", "", "", stamp]);     // footer row (E..)
+    aoa.push(["", "", "", "", ""]);       // blank
+    aoa.push(["", "", "", "", stamp]);    // footer (E)
 
     var wb = XLSX.utils.book_new();
     var ws = XLSX.utils.aoa_to_sheet(aoa);
 
-    var maxRow = aoa.length;
-
+    var maxRow = aoa.length;   // 1-based
     ws["!cols"] = [{wch: 6},{wch: 14},{wch: 14},{wch: 14},{wch: 14}];
 
     ws["!rows"] = ws["!rows"] || [];
@@ -353,10 +342,15 @@
       };
     }
     function setStyle(addr, s) { if (ws[addr]) ws[addr].s = s; }
+    function ensureCell(r0, c0) {
+      var addr = XLSX.utils.encode_cell({ r: r0, c: c0 });
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" }; // tạo cell trống để áp style/border
+      return addr;
+    }
     function numColorRgb(n) {
-      if (n > 0) return "008000";   // green
-      if (n < 0) return "CC0000";   // red
-      return "808080";             // grey
+      if (n > 0) return "008000";
+      if (n < 0) return "CC0000";
+      return "808080";
     }
 
     // A1 header (no border)
@@ -366,15 +360,21 @@
       fill: { patternType: "solid", fgColor: { rgb: "F2F2F2" } }
     });
 
-    // Content area only (exclude last 2 footer rows)
+    // Content area: A3:E{...} (KHÔNG gồm 2 dòng cuối report)
     var footerRows = 2;
-    var contentStartR = 2;                   // row 3
-    var contentEndR   = (maxRow - 1) - footerRows;
-    var contentStartC = 0;
-    var contentEndC   = 4;
+    var contentStartR = 2;                 // row 3 (0-based)
+    var contentEndR   = (maxRow - 1) - footerRows; // 0-based last row of table content
+    var cStart = 0, cEnd = 4;
 
-    // row 3 header
-    for (var cc = contentStartC; cc <= contentEndC; cc++) {
+    // 1) ÉP TẠO CELL CHO TOÀN VÙNG NỘI DUNG => border sẽ đầy đủ
+    for (var rr = contentStartR; rr <= contentEndR; rr++) {
+      for (var cc = cStart; cc <= cEnd; cc++) {
+        ensureCell(rr, cc);
+      }
+    }
+
+    // Row 3 header style
+    for (var cc = cStart; cc <= cEnd; cc++) {
       var addrH = XLSX.utils.encode_cell({ r: 2, c: cc });
       setStyle(addrH, {
         font: { bold: true },
@@ -384,10 +384,9 @@
       });
     }
 
-    // row 4 totals (UPDATE #2: thêm màu theo số)
-    for (var cc = contentStartC; cc <= contentEndC; cc++) {
+    // Row 4 totals style + color by sign
+    for (var cc = cStart; cc <= cEnd; cc++) {
       var addrT = XLSX.utils.encode_cell({ r: 3, c: cc });
-
       var styleT = {
         font: { bold: true },
         alignment: { horizontal: "center", vertical: "center" },
@@ -395,49 +394,42 @@
         border: borderThin()
       };
 
-      // Cells B..E (score totals) => color by sign
       if (cc >= 1 && cc <= 4 && ws[addrT]) {
         ws[addrT].z = "0";
-        var num = Number(ws[addrT].v);
-        if (!isNaN(num)) {
-          styleT.font = Object.assign({}, styleT.font, { color: { rgb: numColorRgb(num) } });
-        } else {
-          styleT.font = Object.assign({}, styleT.font, { color: { rgb: "808080" } });
-        }
+        var numT = Number(ws[addrT].v);
+        styleT.font = Object.assign({}, styleT.font, { color: { rgb: numColorRgb(isNaN(numT) ? 0 : numT) } });
       }
-
       setStyle(addrT, styleT);
     }
 
-    // data rows: zebra + O/X + +/- colors
+    // Data rows style (row 5..contentEndR)
     for (var rr = 4; rr <= contentEndR; rr++) {
       var isStripe = ((rr - 4) % 2 === 0);
-      for (var cc = contentStartC; cc <= contentEndC; cc++) {
+      for (var cc = cStart; cc <= cEnd; cc++) {
         var addrD = XLSX.utils.encode_cell({ r: rr, c: cc });
-        if (!ws[addrD]) continue;
 
         var base = {
           alignment: { horizontal: "center", vertical: "center" },
           border: borderThin()
         };
-
         if (isStripe) base.fill = { patternType: "solid", fgColor: { rgb: "FBFBFB" } };
 
-        // check column
+        // Check column O/X
         if (cc === 0) {
           var v = (ws[addrD].v || "").toString().trim();
           if (v === "O") base.font = { bold: true, color: { rgb: "008000" } };
           else if (v === "X") base.font = { bold: true, color: { rgb: "CC0000" } };
+          else base.font = { color: { rgb: "808080" } };
         }
 
-        // score columns
+        // Score columns with +/-/0 colors
         if (cc >= 1 && cc <= 4) {
           ws[addrD].z = "0";
           var num = Number(ws[addrD].v);
           if (!isNaN(num)) {
-            if (num > 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "008000" } });
-            if (num < 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "CC0000" } });
-            if (num === 0) base.font = Object.assign({}, base.font || {}, { color: { rgb: "808080" } });
+            base.font = Object.assign({}, base.font || {}, { color: { rgb: numColorRgb(num) } });
+          } else {
+            base.font = Object.assign({}, base.font || {}, { color: { rgb: "808080" } });
           }
         }
 
@@ -445,9 +437,8 @@
       }
     }
 
-    // footer cell style: right aligned, italic, no border
-    var footerRowIndex0 = maxRow - 1;
-    var footerCellAddr = XLSX.utils.encode_cell({ r: footerRowIndex0, c: 4 });
+    // Footer cell style: right aligned, italic, NO border (ngoài vùng content)
+    var footerCellAddr = XLSX.utils.encode_cell({ r: maxRow - 1, c: 4 }); // E(last)
     if (ws[footerCellAddr]) {
       ws[footerCellAddr].s = {
         alignment: { horizontal: "right", vertical: "center" },
