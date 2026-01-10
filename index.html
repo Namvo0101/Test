@@ -97,8 +97,8 @@
 
 <button onclick="enterPoints()">Enter Points</button>
 <button onclick="completeScores()">Complete</button>
-<button onclick="resetGame()">Reset</button>
 <br>
+<button onclick="resetGame()">Reset</button>
 <button onclick="exportPDF()">Export PDF</button>
 
 <!-- PDF libs (local) -->
@@ -277,6 +277,7 @@
     var rowCount = table.rows.length;
     var error = false;
 
+    // keep input colors in sync
     applyColorsToAllScoreInputs();
 
     for (var i = 0; i < 4; i++) {
@@ -352,7 +353,7 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
-  /* ==================== EXPORT PDF (Round # + fix TOTAL wrap) ==================== */
+  /* ==================== EXPORT PDF (Round # + TOTAL no-wrap) ==================== */
   async function exportPDF() {
     completeScores();
 
