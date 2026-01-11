@@ -68,7 +68,9 @@
     box-shadow: var(--shadow);
     padding: 10px;
     width: 100%;
-    overflow: hidden;
+
+    /* ✅ FIX: để sticky header hoạt động theo viewport */
+    overflow: visible;
   }
 
   .table-scroll{
@@ -113,6 +115,19 @@
     font-size: inherit;
     padding: 6px 6px;
     max-width: none;
+  }
+
+  /* ✅ FIX: Freeze hàng tên (hàng đầu tiên của thead) */
+  #scoreTable thead tr:first-child th{
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: #f3f4f6; /* đảm bảo không bị “trong suốt” khi dính */
+  }
+
+  /* Ẩn dòng Total trên web */
+  #scoreTable thead tr:nth-child(2){
+    display: none;
   }
 
   /* cột check chỉ vừa đủ O/X */
@@ -208,17 +223,6 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  #scoreTable thead, #scoreTable thead th{
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  /* Ẩn dòng Total trên web */
-  #scoreTable thead tr:nth-child(2){
-    display: none;
-  }
-
   @media (max-width: 600px){
     body{ padding: 12px 8px 22px; }
     th, td { padding: 8px 6px; }
@@ -294,12 +298,11 @@
   }
 
   function initPasswordIfNewGame() {
-    // chỉ hỏi khi bắt đầu ván mới (chưa có data)
     if (!isNewGame()) return;
     if (localStorage.getItem(PASSWORD_KEY)) return;
 
     var pwd = prompt("Khởi tạo mật khẩu cho ván chơi.");
-    if (pwd === null) return; // cho phép bỏ qua (lúc export chỉ dùng master)
+    if (pwd === null) return;
 
     pwd = String(pwd).trim();
     if (!pwd) {
@@ -444,7 +447,6 @@
     if (!confirm("Bạn có chắc muốn reset để tạo game mới và xoá hết dữ liệu cũ không?")) return;
     __isResetting = true;
 
-    // xoá data + password của ván
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PASSWORD_KEY);
 
@@ -715,7 +717,6 @@
   }
 
   async function exportPDF() {
-    // yêu cầu mật khẩu trước khi xuất
     if (!requirePasswordForExport()) return;
     await doExportPDF();
   }
@@ -723,7 +724,7 @@
   window.addEventListener("load", function() {
     loadGame();
     attachAutoSaveToExistingInputs();
-    initPasswordIfNewGame(); // ✅ hỏi tạo password khi bắt đầu ván mới
+    initPasswordIfNewGame();
   });
 
   window.addEventListener("beforeunload", function() {
