@@ -47,6 +47,7 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
 
+  /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
     top: 0;
@@ -54,7 +55,7 @@
     right: 0;
     z-index: 999;
     background: var(--bg);
-    padding: var(--topbar-pad) 10px 10px; /* mỏng hơn */
+    padding: var(--topbar-pad) 10px 10px;
     border-bottom: 1px solid var(--line);
   }
 
@@ -65,7 +66,7 @@
 
   #header{
     font-size: 12px;
-    margin: 0 auto 8px; /* mỏng hơn */
+    margin: 0 auto 8px;
     color: var(--muted);
     letter-spacing: 0.12em;
   }
@@ -75,7 +76,7 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
-    padding: 8px; /* mỏng hơn */
+    padding: 8px;
     overflow: visible;
   }
 
@@ -87,37 +88,45 @@
     overscroll-behavior-x: contain;
   }
 
+  /* ✅ Grid thẳng hàng với bảng: check + 4 cột */
   .namegrid{
     display: grid;
     grid-template-columns: var(--check-col) repeat(4, 1fr);
-    gap: 8px;              /* gọn hơn */
-    align-items: center;
+    gap: 8px;
+    align-items: stretch;           /* ✅ các ô tự stretch cùng chiều cao */
     width: 100%;
     min-width: 0;
   }
 
   .namegrid .spacer{
     width: 100%;
-    height: 1px;
   }
 
-  /* ✅ chip mỏng hơn */
+  /* ✅ Ô tên: cho phép xuống dòng + chữ to hơn */
   .namechip{
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
-    border-radius: 999px;
-    padding: 6px 10px;                        /* mỏng hơn */
+    border-radius: 16px;
+    padding: 8px 10px;
     width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
-    font-size: clamp(12px, 2.3vw, 16px);      /* gọn hơn */
-    min-height: 32px;                          /* mỏng hơn */
-    display: inline-flex;
+    height: 100%;                  /* ✅ bằng nhau về chiều cao */
+    min-height: 44px;              /* ✅ tối thiểu đẹp */
+    display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+
+    /* ✅ cho phép wrap */
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    line-height: 1.15;
+
+    font-size: clamp(14px, 3.2vw, 20px); /* ✅ to hơn */
+    font-family: inherit;
   }
 
+  /* input tên vẫn 1 dòng khi đang sửa (bình thường) */
   .namechip input[type="text"]{
     width: 100%;
     border: none;
@@ -126,13 +135,10 @@
     text-align: center;
     font-size: inherit;
     padding: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
     font-family: inherit;
-    line-height: 1.1;
   }
 
+  /* ✅ Khi fix tên: đậm + tím + cho phép wrap */
   .name-fixed{
     font-weight: 800;
     color: var(--chip-fixed);
@@ -140,12 +146,13 @@
     width: 100%;
     text-align: center;
     font-family: inherit;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
-    line-height: 1.1;
+
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.15;
   }
 
+  /* Wrap content */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -283,7 +290,7 @@
     .namebar-card{ box-shadow: none; }
     .check-positive, .check-negative{ font-size: 20px; }
     .namegrid{ gap: 6px; }
-    .namechip{ padding: 5px 8px; min-height: 30px; }
+    .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
   }
 </style>
 </head>
@@ -313,6 +320,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
@@ -384,7 +392,6 @@
     var gamePwd = localStorage.getItem(PASSWORD_KEY) || "";
 
     if (entered === gamePwd || entered === MASTER_PASSWORD) return true;
-
     alert("Mật khẩu sai.");
     return false;
   }
@@ -432,9 +439,7 @@
   function applyColorsToAllScoreInputs() {
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
-      Array.from(inputs).forEach(function(inp) {
-        applySignColorToInput(inp);
-      });
+      Array.from(inputs).forEach(function(inp) { applySignColorToInput(inp); });
     }
   }
 
@@ -586,7 +591,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ==================== PDF FONT LOADER ==================== */
+  /* ===== PDF (giữ nguyên logic) ===== */
   let __pdfFontCache = null;
 
   function __arrayBufferToBase64(buffer) {
@@ -606,14 +611,8 @@
     const boldUrl = "./fonts/NotoSans-Bold.ttf";
 
     const [regBuf, boldBuf] = await Promise.all([
-      fetch(regularUrl).then(r => {
-        if (!r.ok) throw new Error("Không tải được font: " + regularUrl);
-        return r.arrayBuffer();
-      }),
-      fetch(boldUrl).then(r => {
-        if (!r.ok) throw new Error("Không tải được font: " + boldUrl);
-        return r.arrayBuffer();
-      })
+      fetch(regularUrl).then(r => { if (!r.ok) throw new Error(); return r.arrayBuffer(); }),
+      fetch(boldUrl).then(r => { if (!r.ok) throw new Error(); return r.arrayBuffer(); })
     ]);
 
     __pdfFontCache = {
@@ -625,10 +624,8 @@
 
   async function __attachVietnameseFontsToDoc(doc) {
     const cache = await __getPdfFontCache();
-
     doc.addFileToVFS("NotoSans-Regular.ttf", cache.regularB64);
     doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
-
     doc.addFileToVFS("NotoSans-Bold.ttf", cache.boldB64);
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
@@ -639,8 +636,7 @@
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-
-    try { await __attachVietnameseFontsToDoc(doc); } catch (e) { return; }
+    await __attachVietnameseFontsToDoc(doc);
 
     function getPlayerName(i) {
       var cell = document.getElementById("namecell-" + i);
@@ -723,16 +719,12 @@
 
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const rightMargin = 40;
-    const topMargin = 50;
-
-    const lastY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY : 80;
-    let y = lastY + 28;
-    if (y > pageH - 40) { doc.addPage(); y = topMargin; }
+    let y = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 80) + 28;
+    if (y > pageH - 40) { doc.addPage(); y = 50; }
 
     doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
-    doc.text(stamp, pageW - rightMargin, y, { align: "right" });
+    doc.text(stamp, pageW - 40, y, { align: "right" });
 
     const filename =
       "scores_" +
@@ -750,12 +742,10 @@
 
   window.addEventListener("load", function() {
     loadGame();
-
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
-
     initPasswordIfNewGame();
     syncTopSpacer();
   });
