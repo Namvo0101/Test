@@ -21,8 +21,6 @@
     --radius: 16px;
 
     --check-col: 44px;
-
-    /* topbar height estimate */
     --topbar-pad: 10px;
   }
 
@@ -45,7 +43,7 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
 
-  /* ===== Fixed Topbar (Nam Vo + Names) ===== */
+  /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
     top: 0;
@@ -69,38 +67,40 @@
     letter-spacing: 0.12em;
   }
 
+  /* ✅ HEADER NAME ROW LOOKS LIKE TABLE HEADER */
   .namebar{
-    background: var(--card);
-    border: 1px solid var(--line);
+    border: 1px solid var(--line-strong);
     border-radius: var(--radius);
+    overflow: hidden;
+    background: #f3f4f6;
     box-shadow: var(--shadow-sm);
-    padding: 8px 8px;
   }
 
   .namegrid{
     display: grid;
     grid-template-columns: var(--check-col) repeat(4, 1fr);
-    gap: 8px;
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .namegrid > div{
+    display: flex;
     align-items: center;
-  }
-
-  .namegrid .spacer{
-    width: 100%;
-    height: 1px; /* chỉ để giữ cột check */
-  }
-
-  .namecell{
+    justify-content: center;
+    padding: 8px 6px;
     background: #f3f4f6;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 6px 6px;
-    overflow: hidden;
+    border-right: 1px solid var(--line-strong);
+    min-height: 44px;
     white-space: nowrap;
-    text-overflow: clip; /* không ... */
+    overflow: hidden;
+    text-overflow: clip;
     font-size: clamp(12px, 2.8vw, 18px);
   }
+  .namegrid > div:last-child{ border-right: none; }
 
-  .namecell input{
+  .namegrid .spacer{ font-size: 0; }
+
+  .namegrid input[type="text"]{
     width: 100%;
     border: none;
     outline: none;
@@ -113,6 +113,17 @@
     text-overflow: clip;
   }
 
+  /* ✅ NEW: tên đã fix sẽ in đậm */
+  .name-fixed{
+    font-weight: 800;
+    width: 100%;
+    display: block;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -120,10 +131,7 @@
     padding: 0 10px 26px;
   }
 
-  /* chừa chỗ cho topbar cố định */
-  .spacer-top{
-    height: 140px; /* JS sẽ auto update chính xác */
-  }
+  .spacer-top{ height: 140px; }
 
   .table-card{
     background: var(--card);
@@ -158,7 +166,6 @@
     vertical-align: middle;
   }
 
-  /* table header row for columns only */
   thead th{
     background: #f3f4f6;
     border-bottom: 1px solid var(--line-strong);
@@ -211,6 +218,8 @@
   }
   .check-positive { color: green; }
   .check-negative { color: red; }
+
+  .total-score { font-size: 24px; font-weight: bold; }
 
   .controls{
     margin: 14px auto 0;
@@ -266,16 +275,16 @@
       <div class="namegrid">
         <div class="spacer"></div>
 
-        <div class="namecell" id="namecell-0">
+        <div id="namecell-0">
           <input type="text" id="name-0" value="Bích Ngân" onblur="setName(0)">
         </div>
-        <div class="namecell" id="namecell-1">
+        <div id="namecell-1">
           <input type="text" id="name-1" value="Phương Nam" onblur="setName(1)">
         </div>
-        <div class="namecell" id="namecell-2">
+        <div id="namecell-2">
           <input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)">
         </div>
-        <div class="namecell" id="namecell-3">
+        <div id="namecell-3">
           <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
         </div>
       </div>
@@ -364,14 +373,21 @@
     return false;
   }
 
-  /* ===== keep spacer height = topbar height ===== */
   function syncTopSpacer() {
     var topbar = document.getElementById("topbar");
     var spacer = document.getElementById("spacerTop");
-    spacer.style.height = topbar.offsetHeight + 12 + "px";
+    spacer.style.height = (topbar.offsetHeight + 12) + "px";
   }
 
-  /* ================== live sign color for each input ================== */
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
   function applySignColorToInput(input) {
     input.classList.remove("score-positive", "score-negative", "score-neutral");
     var raw = (input.value || "").trim();
@@ -412,7 +428,6 @@
     var table = document.getElementById("scoreTable");
     var data = { headers: [], rows: [] };
 
-    // headers from fixed namebar (input or text)
     for (var i = 0; i < 4; i++) {
       var cell = document.getElementById("namecell-" + i);
       var input = cell ? cell.querySelector("input") : null;
@@ -420,7 +435,6 @@
       else data.headers.push({ isInput: false, value: cell ? cell.innerHTML : "" });
     }
 
-    // score rows
     for (var r = 2; r < table.rows.length; r++) {
       var row = table.rows[r];
       var rowObj = { check: row.cells[0].innerHTML, scores: [] };
@@ -445,23 +459,20 @@
       var data = JSON.parse(trimmed);
       if (!(data && data.headers && data.rows)) return;
 
-      // restore headers into fixed namebar
       for (var i = 0; i < 4; i++) {
         var wrap = document.getElementById("namecell-" + i);
         var h = data.headers[i];
 
         if (wrap && h && h.isInput) {
-          wrap.innerHTML = '<input type="text" id="name-' + i + '" value="' + (h.value || "") + '" onblur="setName(' + i + ')">';
+          wrap.innerHTML = '<input type="text" id="name-' + i + '" value="' + escapeHtml(h.value || "") + '" onblur="setName(' + i + ')">';
         } else if (wrap) {
           wrap.innerHTML = (h && h.value != null) ? h.value : wrap.innerHTML;
         }
       }
 
-      // clear existing score rows
       var table = document.getElementById("scoreTable");
       while (table.rows.length > 2) table.deleteRow(-1);
 
-      // restore rows
       if (data.rows && data.rows.length) {
         data.rows.forEach(function(r) {
           var row = table.insertRow(-1);
@@ -486,7 +497,10 @@
     var input = document.getElementById("name-" + index);
     var name = input.value;
     var wrap = document.getElementById("namecell-" + index);
-    wrap.innerHTML = name;
+
+    // ✅ fix + bold
+    wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
+
     saveGame();
     syncTopSpacer();
   }
@@ -761,7 +775,15 @@
 
   window.addEventListener("load", function() {
     loadGame();
-    attachAutoSaveToExistingInputs();
+
+    // bind any existing inputs
+    for (var i = 0; i < 4; i++) {
+      var inputs = document.getElementsByClassName("score-input-" + i);
+      Array.from(inputs).forEach(function(inp) {
+        bindScoreInput(inp);
+      });
+    }
+
     initPasswordIfNewGame();
     syncTopSpacer();
   });
