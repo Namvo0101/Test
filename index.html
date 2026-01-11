@@ -25,7 +25,7 @@
 
     --chip-bg: #f3f4f6;
     --chip-border: rgba(0,0,0,0.16);
-    --chip-fixed: #6d28d9; /* tím */
+    --chip-fixed: #6d28d9;
   }
 
   * , *::before, *::after { box-sizing: border-box; }
@@ -47,7 +47,6 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
 
-  /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
     top: 0;
@@ -55,7 +54,7 @@
     right: 0;
     z-index: 999;
     background: var(--bg);
-    padding: var(--topbar-pad) 10px 12px;
+    padding: var(--topbar-pad) 10px 10px; /* mỏng hơn */
     border-bottom: 1px solid var(--line);
   }
 
@@ -66,31 +65,54 @@
 
   #header{
     font-size: 12px;
-    margin: 0 auto 10px;
+    margin: 0 auto 8px; /* mỏng hơn */
     color: var(--muted);
     letter-spacing: 0.12em;
   }
 
-  /* ✅ NEW: Name labels đẹp hơn */
-  .namebar{
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
+  .namebar-card{
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 8px; /* mỏng hơn */
+    overflow: visible;
   }
 
+  .namebar-scroll{
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .namegrid{
+    display: grid;
+    grid-template-columns: var(--check-col) repeat(4, 1fr);
+    gap: 8px;              /* gọn hơn */
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .namegrid .spacer{
+    width: 100%;
+    height: 1px;
+  }
+
+  /* ✅ chip mỏng hơn */
   .namechip{
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
     border-radius: 999px;
-    padding: 10px 14px;
-    min-width: 140px;
-    max-width: 260px;
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
+    padding: 6px 10px;                        /* mỏng hơn */
+    width: 100%;
     white-space: nowrap;
+    overflow: hidden;
     text-overflow: clip;
-    font-size: clamp(13px, 2.8vw, 18px);
+    font-size: clamp(12px, 2.3vw, 16px);      /* gọn hơn */
+    min-height: 32px;                          /* mỏng hơn */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -107,23 +129,23 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
-    font-family: inherit; /* không chân */
+    font-family: inherit;
+    line-height: 1.1;
   }
 
-  /* ✅ Khi fix tên: đậm + tím */
   .name-fixed{
     font-weight: 800;
     color: var(--chip-fixed);
     display: block;
     width: 100%;
     text-align: center;
-    font-family: inherit; /* không chân */
+    font-family: inherit;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
+    line-height: 1.1;
   }
 
-  /* Wrap content */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -131,8 +153,7 @@
     padding: 0 10px 26px;
   }
 
-  /* chừa chỗ cho topbar cố định */
-  .spacer-top{ height: 150px; }
+  .spacer-top{ height: 140px; } /* JS auto set */
 
   .table-card{
     background: var(--card);
@@ -174,7 +195,6 @@
     color: var(--muted);
   }
 
-  /* check column width */
   #scoreTable th:first-child,
   #scoreTable td:first-child{
     width: var(--check-col);
@@ -199,7 +219,7 @@
     text-align: center;
     font-size: 18px;
     transition: box-shadow .15s ease, border-color .15s ease;
-    font-family: inherit; /* không chân */
+    font-family: inherit;
   }
   input[type="number"]:focus{
     border-color: rgba(59,130,246,0.55);
@@ -220,8 +240,6 @@
   }
   .check-positive { color: green; }
   .check-negative { color: red; }
-
-  .total-score { font-size: 24px; font-weight: bold; }
 
   .controls{
     margin: 14px auto 0;
@@ -247,7 +265,7 @@
     cursor: pointer;
     transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
     user-select: none;
-    font-family: inherit; /* không chân */
+    font-family: inherit;
   }
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
@@ -262,30 +280,37 @@
     input[type="number"]{ font-size: 16px; padding: 7px 8px; }
     button { font-size: 22px; padding: 10px 14px; border-radius: 14px; box-shadow: none; }
     .table-card{ box-shadow: none; }
-    .namechip{ box-shadow: none; min-width: 132px; }
+    .namebar-card{ box-shadow: none; }
     .check-positive, .check-negative{ font-size: 20px; }
+    .namegrid{ gap: 6px; }
+    .namechip{ padding: 5px 8px; min-height: 30px; }
   }
 </style>
 </head>
 <body>
 
-<!-- Fixed Topbar -->
 <div class="topbar" id="topbar">
   <div class="topbar-inner">
     <div id="header">------ Nam Vo ------</div>
 
-    <div class="namebar">
-      <div class="namechip" id="namecell-0">
-        <input type="text" id="name-0" value="Bích Ngân" onblur="setName(0)">
-      </div>
-      <div class="namechip" id="namecell-1">
-        <input type="text" id="name-1" value="Phương Nam" onblur="setName(1)">
-      </div>
-      <div class="namechip" id="namecell-2">
-        <input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)">
-      </div>
-      <div class="namechip" id="namecell-3">
-        <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
+    <div class="namebar-card">
+      <div class="namebar-scroll">
+        <div class="namegrid">
+          <div class="spacer"></div>
+
+          <div class="namechip" id="namecell-0">
+            <input type="text" id="name-0" value="Bích Ngân" onblur="setName(0)">
+          </div>
+          <div class="namechip" id="namecell-1">
+            <input type="text" id="name-1" value="Phương Nam" onblur="setName(1)">
+          </div>
+          <div class="namechip" id="namecell-2">
+            <input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)">
+          </div>
+          <div class="namechip" id="namecell-3">
+            <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -302,7 +327,6 @@
             <th></th>
             <th></th><th></th><th></th><th></th>
           </tr>
-          <!-- total vẫn tồn tại để tính/export, nhưng không hiển thị -->
           <tr style="display:none;">
             <td></td>
             <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
@@ -328,7 +352,6 @@
   </div>
 </div>
 
-<!-- PDF libs (local) -->
 <script src="./libs/jspdf.umd.min.js"></script>
 <script src="./libs/jspdf.plugin.autotable.min.js"></script>
 
@@ -336,13 +359,10 @@
   var STORAGE_KEY = "scoreTable_save_v1";
   var __isResetting = false;
 
-  /* ==================== SECURITY ==================== */
   var MASTER_PASSWORD = "vophuongnam";
   var PASSWORD_KEY = STORAGE_KEY + "_pwd";
 
-  function isNewGame() {
-    return !localStorage.getItem(STORAGE_KEY);
-  }
+  function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
 
   function initPasswordIfNewGame() {
     if (!isNewGame()) return;
@@ -352,10 +372,7 @@
     if (pwd === null) return;
 
     pwd = String(pwd).trim();
-    if (!pwd) {
-      alert("Mật khẩu không được để trống.");
-      return;
-    }
+    if (!pwd) { alert("Mật khẩu không được để trống."); return; }
     localStorage.setItem(PASSWORD_KEY, pwd);
   }
 
@@ -497,7 +514,6 @@
     var name = input.value;
     var wrap = document.getElementById("namecell-" + index);
 
-    // fix + bold + tím
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
 
     saveGame();
@@ -619,21 +635,12 @@
 
   async function doExportPDF() {
     completeScores();
-
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert("Chưa load được thư viện jsPDF.\nHãy kiểm tra:\n/libs/jspdf.umd.min.js\n/libs/jspdf.plugin.autotable.min.js");
-      return;
-    }
+    if (!window.jspdf || !window.jspdf.jsPDF) return;
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
 
-    try {
-      await __attachVietnameseFontsToDoc(doc);
-    } catch (e) {
-      alert("Lỗi load font PDF: " + (e && e.message ? e.message : e));
-      return;
-    }
+    try { await __attachVietnameseFontsToDoc(doc); } catch (e) { return; }
 
     function getPlayerName(i) {
       var cell = document.getElementById("namecell-" + i);
@@ -642,7 +649,6 @@
       var v = inp ? inp.value : (cell.textContent || "");
       return String(v || "").trim();
     }
-
     const names = [0,1,2,3].map(getPlayerName);
 
     doc.setFont("NotoSans", "bold");
@@ -650,8 +656,7 @@
     doc.text("—— Nam Vo ——", doc.internal.pageSize.getWidth() / 2, 50, { align: "center" });
 
     const head = [["#", "", names[0], names[1], names[2], names[3]]];
-
-    const totals = [0, 1, 2, 3].map(i => document.getElementById("total-score-" + i).innerText);
+    const totals = [0,1,2,3].map(i => document.getElementById("total-score-" + i).innerText);
 
     const body = [];
     body.push(["", "TOTAL", totals[0], totals[1], totals[2], totals[3]]);
@@ -678,56 +683,32 @@
       head,
       body,
       theme: "grid",
-      styles: {
-        font: "NotoSans",
-        fontStyle: "normal",
-        halign: "center",
-        valign: "middle",
-        fontSize: 11,
-        cellPadding: 6
-      },
-      headStyles: {
-        font: "NotoSans",
-        fontStyle: "bold",
-        fillColor: [237, 237, 237],
-        textColor: 0
-      },
+      styles: { font: "NotoSans", fontStyle: "normal", halign: "center", valign: "middle", fontSize: 11, cellPadding: 6 },
+      headStyles: { font: "NotoSans", fontStyle: "bold", fillColor: [237, 237, 237], textColor: 0 },
       alternateRowStyles: { fillColor: [251, 251, 251] },
       columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 } },
       didParseCell: function (data) {
-        const row = data.row;
-        const col = data.column;
-        const cell = data.cell;
+        const row = data.row, col = data.column, cell = data.cell;
 
         if (data.section === "body" && row.index === 0) {
-          cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
           cell.styles.fillColor = [247, 247, 247];
-
-          if (col.index >= 2) {
-            const n = parseInt(cell.raw, 10) || 0;
-            cell.styles.textColor = signColor(n);
-          } else {
-            cell.styles.textColor = 0;
-          }
+          if (col.index >= 2) cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
         }
 
         if (data.section === "body" && row.index >= 1 && col.index >= 2) {
-          const n = parseInt(cell.raw, 10) || 0;
-          cell.styles.textColor = signColor(n);
+          cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
         }
 
         if (data.section === "body" && col.index === 1) {
           const v = String(cell.raw || "").trim();
-          cell.styles.font = "NotoSans";
           cell.styles.fontStyle = "bold";
-          if (v === "O") cell.styles.textColor = [0, 128, 0];
-          else if (v === "X") cell.styles.textColor = [204, 0, 0];
-          else cell.styles.textColor = 0;
+          if (v === "O") cell.styles.textColor = [0,128,0];
+          else if (v === "X") cell.styles.textColor = [204,0,0];
         }
 
         if (data.section === "body" && col.index === 0) {
-          cell.styles.textColor = [128, 128, 128];
+          cell.styles.textColor = [128,128,128];
         }
       }
     });
@@ -746,13 +727,8 @@
     const topMargin = 50;
 
     const lastY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY : 80;
-    const lineHeight = 14;
-    let y = lastY + (2 * lineHeight);
-
-    if (y > pageH - 40) {
-      doc.addPage();
-      y = topMargin;
-    }
+    let y = lastY + 28;
+    if (y > pageH - 40) { doc.addPage(); y = topMargin; }
 
     doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
@@ -775,21 +751,16 @@
   window.addEventListener("load", function() {
     loadGame();
 
-    // bind existing inputs
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
-      Array.from(inputs).forEach(function(inp) {
-        bindScoreInput(inp);
-      });
+      Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
 
     initPasswordIfNewGame();
     syncTopSpacer();
   });
 
-  window.addEventListener("resize", function() {
-    syncTopSpacer();
-  });
+  window.addEventListener("resize", function() { syncTopSpacer(); });
 
   window.addEventListener("beforeunload", function() {
     if (!__isResetting) saveGame();
