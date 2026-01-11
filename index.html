@@ -22,6 +22,10 @@
 
     --check-col: 44px;
     --topbar-pad: 10px;
+
+    --chip-bg: #f3f4f6;
+    --chip-border: rgba(0,0,0,0.16);
+    --chip-fixed: #6d28d9; /* tím */
   }
 
   * , *::before, *::after { box-sizing: border-box; }
@@ -62,68 +66,64 @@
 
   #header{
     font-size: 12px;
-    margin: 0 auto 8px;
+    margin: 0 auto 10px;
     color: var(--muted);
     letter-spacing: 0.12em;
   }
 
-  /* ✅ HEADER NAME ROW LOOKS LIKE TABLE HEADER */
+  /* ✅ NEW: Name labels đẹp hơn */
   .namebar{
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: #f3f4f6;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .namegrid{
-    display: grid;
-    grid-template-columns: var(--check-col) repeat(4, 1fr);
-    gap: 0;
-    align-items: stretch;
-  }
-
-  .namegrid > div{
     display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .namechip{
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
+    border-radius: 999px;
+    padding: 10px 14px;
+    min-width: 140px;
+    max-width: 260px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    font-size: clamp(13px, 2.8vw, 18px);
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 6px;
-    background: #f3f4f6;
-    border-right: 1px solid var(--line-strong);
-    min-height: 44px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: clip;
-    font-size: clamp(12px, 2.8vw, 18px);
   }
-  .namegrid > div:last-child{ border-right: none; }
 
-  .namegrid .spacer{ font-size: 0; }
-
-  .namegrid input[type="text"]{
+  .namechip input[type="text"]{
     width: 100%;
     border: none;
     outline: none;
     background: transparent;
     text-align: center;
     font-size: inherit;
-    padding: 4px 4px;
+    padding: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
+    font-family: inherit; /* không chân */
   }
 
-  /* ✅ NEW: tên đã fix sẽ in đậm */
+  /* ✅ Khi fix tên: đậm + tím */
   .name-fixed{
     font-weight: 800;
-    width: 100%;
+    color: var(--chip-fixed);
     display: block;
+    width: 100%;
     text-align: center;
+    font-family: inherit; /* không chân */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: clip;
   }
 
+  /* Wrap content */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -131,7 +131,8 @@
     padding: 0 10px 26px;
   }
 
-  .spacer-top{ height: 140px; }
+  /* chừa chỗ cho topbar cố định */
+  .spacer-top{ height: 150px; }
 
   .table-card{
     background: var(--card);
@@ -198,6 +199,7 @@
     text-align: center;
     font-size: 18px;
     transition: box-shadow .15s ease, border-color .15s ease;
+    font-family: inherit; /* không chân */
   }
   input[type="number"]:focus{
     border-color: rgba(59,130,246,0.55);
@@ -245,6 +247,7 @@
     cursor: pointer;
     transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
     user-select: none;
+    font-family: inherit; /* không chân */
   }
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
@@ -259,7 +262,7 @@
     input[type="number"]{ font-size: 16px; padding: 7px 8px; }
     button { font-size: 22px; padding: 10px 14px; border-radius: 14px; box-shadow: none; }
     .table-card{ box-shadow: none; }
-    .namebar{ box-shadow: none; }
+    .namechip{ box-shadow: none; min-width: 132px; }
     .check-positive, .check-negative{ font-size: 20px; }
   }
 </style>
@@ -272,21 +275,17 @@
     <div id="header">------ Nam Vo ------</div>
 
     <div class="namebar">
-      <div class="namegrid">
-        <div class="spacer"></div>
-
-        <div id="namecell-0">
-          <input type="text" id="name-0" value="Bích Ngân" onblur="setName(0)">
-        </div>
-        <div id="namecell-1">
-          <input type="text" id="name-1" value="Phương Nam" onblur="setName(1)">
-        </div>
-        <div id="namecell-2">
-          <input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)">
-        </div>
-        <div id="namecell-3">
-          <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
-        </div>
+      <div class="namechip" id="namecell-0">
+        <input type="text" id="name-0" value="Bích Ngân" onblur="setName(0)">
+      </div>
+      <div class="namechip" id="namecell-1">
+        <input type="text" id="name-1" value="Phương Nam" onblur="setName(1)">
+      </div>
+      <div class="namechip" id="namecell-2">
+        <input type="text" id="name-2" value="Cẩm Lệ" onblur="setName(2)">
+      </div>
+      <div class="namechip" id="namecell-3">
+        <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
       </div>
     </div>
   </div>
@@ -498,7 +497,7 @@
     var name = input.value;
     var wrap = document.getElementById("namecell-" + index);
 
-    // ✅ fix + bold
+    // fix + bold + tím
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
 
     saveGame();
@@ -776,7 +775,7 @@
   window.addEventListener("load", function() {
     loadGame();
 
-    // bind any existing inputs
+    // bind existing inputs
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) {
