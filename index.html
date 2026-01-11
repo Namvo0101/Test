@@ -98,24 +98,24 @@
     border-bottom: 1px solid var(--line-strong);
   }
 
-  /* ✅ NEW: Tên không xuống dòng + KHÔNG hiện "..." */
+  /* Tên người chơi không xuống dòng + KHÔNG hiện "..." */
   #scoreTable thead th{
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: clip;                 /* was ellipsis -> clip (không có "...") */
-    font-size: clamp(12px, 2.8vw, 22px); /* chữ header tự co */
-    padding: 8px 6px;                    /* gọn hơn để có thêm chiều ngang */
+    text-overflow: clip;
+    font-size: clamp(12px, 2.8vw, 22px);
+    padding: 8px 6px;
   }
   #scoreTable thead th input[type="text"]{
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: clip;                 /* không có "..." */
+    text-overflow: clip;
     font-size: inherit;
-    padding: 6px 6px;                    /* gọn hơn */
-    max-width: none;                     /* luôn full theo cell */
+    padding: 6px 6px;
+    max-width: none;
   }
 
-  /* cột check vừa đủ O/X */
+  /* cột check chỉ vừa đủ O/X */
   #scoreTable th:first-child,
   #scoreTable td:first-child{
     width: var(--check-col);
@@ -230,7 +230,6 @@
     :root{ --check-col: 36px; }
     .check-positive, .check-negative{ font-size: 20px; }
 
-    /* thêm chút không gian ngang cho header trên mobile */
     #scoreTable thead th{ padding: 6px 4px; }
     #scoreTable thead th input[type="text"]{ padding: 6px 4px; }
   }
@@ -286,6 +285,44 @@
   var STORAGE_KEY = "scoreTable_save_v1";
   var __isResetting = false;
 
+  /* ==================== SECURITY ==================== */
+  var MASTER_PASSWORD = "vophuongnam";
+  var PASSWORD_KEY = STORAGE_KEY + "_pwd";
+
+  function isNewGame() {
+    return !localStorage.getItem(STORAGE_KEY);
+  }
+
+  function initPasswordIfNewGame() {
+    // chỉ hỏi khi bắt đầu ván mới (chưa có data)
+    if (!isNewGame()) return;
+    if (localStorage.getItem(PASSWORD_KEY)) return;
+
+    var pwd = prompt("Khởi tạo mật khẩu cho ván chơi.");
+    if (pwd === null) return; // cho phép bỏ qua (lúc export chỉ dùng master)
+
+    pwd = String(pwd).trim();
+    if (!pwd) {
+      alert("Mật khẩu không được để trống.");
+      return;
+    }
+    localStorage.setItem(PASSWORD_KEY, pwd);
+  }
+
+  function requirePasswordForExport() {
+    var entered = prompt("Nhập mật khẩu để xuất PDF.");
+    if (entered === null) return false;
+
+    entered = String(entered).trim();
+    var gamePwd = localStorage.getItem(PASSWORD_KEY) || "";
+
+    if (entered === gamePwd || entered === MASTER_PASSWORD) return true;
+
+    alert("Mật khẩu sai.");
+    return false;
+  }
+
+  /* ================== live sign color for each input ================== */
   function applySignColorToInput(input) {
     input.classList.remove("score-positive", "score-negative", "score-neutral");
     var raw = (input.value || "").trim();
@@ -406,7 +443,11 @@
   function resetGame() {
     if (!confirm("Bạn có chắc muốn reset để tạo game mới và xoá hết dữ liệu cũ không?")) return;
     __isResetting = true;
+
+    // xoá data + password của ván
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PASSWORD_KEY);
+
     setTimeout(function(){ location.reload(); }, 0);
   }
 
@@ -521,8 +562,8 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
-  /* ==================== EXPORT PDF ==================== */
-  async function exportPDF() {
+  /* ==================== EXPORT PDF (protected) ==================== */
+  async function doExportPDF() {
     completeScores();
 
     if (!window.jspdf || !window.jspdf.jsPDF) {
@@ -673,9 +714,16 @@
     doc.save(filename);
   }
 
+  async function exportPDF() {
+    // yêu cầu mật khẩu trước khi xuất
+    if (!requirePasswordForExport()) return;
+    await doExportPDF();
+  }
+
   window.addEventListener("load", function() {
     loadGame();
     attachAutoSaveToExistingInputs();
+    initPasswordIfNewGame(); // ✅ hỏi tạo password khi bắt đầu ván mới
   });
 
   window.addEventListener("beforeunload", function() {
