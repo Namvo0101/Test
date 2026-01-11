@@ -98,21 +98,24 @@
     border-bottom: 1px solid var(--line-strong);
   }
 
-  /* ✅ NEW: Tên người chơi không xuống dòng + cắt ... nếu dài */
+  /* ✅ NEW: Tên không xuống dòng + KHÔNG hiện "..." */
   #scoreTable thead th{
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: clamp(14px, 2.6vw, 22px); /* chữ header tự co */
+    text-overflow: clip;                 /* was ellipsis -> clip (không có "...") */
+    font-size: clamp(12px, 2.8vw, 22px); /* chữ header tự co */
+    padding: 8px 6px;                    /* gọn hơn để có thêm chiều ngang */
   }
   #scoreTable thead th input[type="text"]{
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;                 /* không có "..." */
     font-size: inherit;
+    padding: 6px 6px;                    /* gọn hơn */
+    max-width: none;                     /* luôn full theo cell */
   }
 
-  /* cột check chỉ vừa đủ O/X */
+  /* cột check vừa đủ O/X */
   #scoreTable th:first-child,
   #scoreTable td:first-child{
     width: var(--check-col);
@@ -226,6 +229,10 @@
 
     :root{ --check-col: 36px; }
     .check-positive, .check-negative{ font-size: 20px; }
+
+    /* thêm chút không gian ngang cho header trên mobile */
+    #scoreTable thead th{ padding: 6px 4px; }
+    #scoreTable thead th input[type="text"]{ padding: 6px 4px; }
   }
 </style>
 </head>
