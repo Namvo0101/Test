@@ -432,8 +432,8 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
-      <!-- ✅ đặt nút TOTAL bên trái nút Reset -->
-      <button id="toggleTotalBtn" class="toggle-total off" type="button" onclick="toggleTotal()">TOTAL: ẨN</button>
+      <!-- ✅ nút chỉ tên "Total Show" và đặt bên trái Reset -->
+      <button id="toggleTotalBtn" class="toggle-total off" type="button" onclick="toggleTotal()">Total Show</button>
       <button class="btn-danger" onclick="resetGame()">Reset</button>
       <button class="btn-success" onclick="exportPDF()">Export PDF</button>
     </div>
@@ -463,7 +463,7 @@
     var on = getShowTotal();
     btn.classList.toggle("on", on);
     btn.classList.toggle("off", !on);
-    btn.textContent = on ? "TOTAL: HIỆN" : "TOTAL: ẨN";
+    btn.textContent = "Total Show"; // ✅ luôn chỉ một tên
   }
 
   // ✅ Fit cột đầu tiên theo chữ TOTAL (khi bật). Khi tắt -> thu về base để rộng hơn cho 4 cột.
