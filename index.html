@@ -187,6 +187,10 @@
     font-size: 12px;
     letter-spacing: 0.14em;
     font-weight: 700;
+
+    /* ✅ FIX: chữ TOTAL không bị cắt ở mép trái */
+    padding: 8px 4px;
+    white-space: nowrap;
   }
 
   .totalchip{
@@ -343,6 +347,7 @@
     .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
     .totalgrid{ gap: 6px; }
     .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
+    .total-label{ padding: 7px 4px; } /* ✅ FIX mobile */
     .total-score{ font-size: 16px; }
   }
 </style>
