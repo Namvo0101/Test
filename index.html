@@ -56,17 +56,15 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
 
+  /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 999;
     background: var(--bg);
     padding: var(--topbar-pad) 10px 10px;
     border-bottom: 1px solid var(--line);
   }
-
   .topbar-inner{ max-width: 980px; margin: 0 auto; }
 
   #header{
@@ -149,6 +147,7 @@
     line-height: 1.15;
   }
 
+  /* ===== Total bar ===== */
   .totalbar{
     margin-top: 8px;
     padding-top: 8px;
@@ -200,6 +199,7 @@
     width: 100%;
   }
 
+  /* ===== Layout ===== */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -330,7 +330,7 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ SWITCH Total: đồng bộ font với button */
+  /* ===== Switch Total ===== */
   .switch-wrap{
     position: relative;
     display: inline-flex;
@@ -410,11 +410,9 @@
       --btn-radius: 14px;
       --check-col: 36px;
     }
-
     button{ box-shadow: none; }
     .table-card{ box-shadow: none; }
     .namebar-card{ box-shadow: none; }
-
     .switch-wrap{ box-shadow: none; gap: 12px; }
     .switch{ width: 52px; height: 28px; }
     .switch::after{ width: 20px; height: 20px; }
@@ -486,7 +484,6 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
-      <!-- ✅ đổi chữ thành "Total" -->
       <label class="switch-wrap" title="Total">
         <span class="switch-text">Total</span>
         <span class="switch" id="totalSwitch"></span>
@@ -511,12 +508,21 @@
   var TOTAL_VIS_KEY = STORAGE_KEY + "_showTotal";
 
   function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
-  function getShowTotal() { return localStorage.getItem(TOTAL_VIS_KEY) === "1"; }
+
+  function getShowTotal() {
+    return localStorage.getItem(TOTAL_VIS_KEY) === "1";
+  }
+
+  function setShowTotal(on){
+    localStorage.setItem(TOTAL_VIS_KEY, on ? "1" : "0");
+    applyTotalVisibility();
+  }
 
   function updateTotalSwitchUI(){
     var sw = document.getElementById("totalSwitch");
     var inp = document.getElementById("totalSwitchInput");
     if (!sw || !inp) return;
+
     var on = getShowTotal();
     sw.classList.toggle("on", on);
     inp.checked = on;
@@ -579,42 +585,42 @@
   function applyTotalVisibility() {
     var bar = document.getElementById("totalBar");
     if (!bar) return;
+
     bar.style.display = getShowTotal() ? "block" : "none";
     updateTotalSwitchUI();
     fitFirstColumnToTOTAL();
     syncTopSpacer();
   }
 
-  function initTotalVisibilityIfNewGame() {
-    if (localStorage.getItem(TOTAL_VIS_KEY) != null) { applyTotalVisibility(); return; }
-    if (!isNewGame()) { localStorage.setItem(TOTAL_VIS_KEY, "0"); applyTotalVisibility(); return; }
-
-    var show = confirm(
-      "Bạn muốn ẨN Total điểm hay HIỆN Total điểm?\n\n" +
-      "OK = HIỆN\nCancel = ẨN"
-    );
-    localStorage.setItem(TOTAL_VIS_KEY, show ? "1" : "0");
-    applyTotalVisibility();
+  // ✅ Không hỏi popup ẩn/hiện nữa, vì đã có nút. Mặc định ẨN nếu chưa có setting.
+  function ensureDefaultTotalSetting() {
+    if (localStorage.getItem(TOTAL_VIS_KEY) == null) {
+      localStorage.setItem(TOTAL_VIS_KEY, "0");
+    }
   }
 
+  // ✅ Cho phép để trống mật khẩu (kể cả Cancel -> coi như trống)
   function initPasswordIfNewGame() {
     if (!isNewGame()) return;
-    if (localStorage.getItem(PASSWORD_KEY)) return;
+    if (localStorage.getItem(PASSWORD_KEY) != null) return;
 
-    var pwd = prompt("Khởi tạo mật khẩu cho ván chơi.");
-    if (pwd === null) return;
-
+    var pwd = prompt("Khởi tạo mật khẩu cho ván chơi (có thể để trống).", "");
+    if (pwd === null) pwd = ""; // Cancel => trống
     pwd = String(pwd).trim();
-    if (!pwd) { alert("Mật khẩu không được để trống."); return; }
-    localStorage.setItem(PASSWORD_KEY, pwd);
+    localStorage.setItem(PASSWORD_KEY, pwd); // có thể là ""
   }
 
+  // ✅ Nếu mật khẩu trống / không có => export không hỏi
   function requirePasswordForExport() {
+    var gamePwd = localStorage.getItem(PASSWORD_KEY);
+    gamePwd = (gamePwd == null) ? "" : String(gamePwd);
+
+    if (gamePwd.trim() === "") return true;
+
     var entered = prompt("Nhập mật khẩu để xuất PDF.");
     if (entered === null) return false;
 
     entered = String(entered).trim();
-    var gamePwd = localStorage.getItem(PASSWORD_KEY) || "";
     if (entered === gamePwd || entered === MASTER_PASSWORD) return true;
 
     alert("Mật khẩu sai.");
@@ -641,11 +647,18 @@
   }
 
   function bindScoreInput(input) {
-    if (input.dataset && input.dataset.bound === "1") { applySignColorToInput(input); return; }
+    if (input.dataset && input.dataset.bound === "1") {
+      applySignColorToInput(input);
+      return;
+    }
     if (input.dataset) input.dataset.bound = "1";
 
     applySignColorToInput(input);
-    input.addEventListener("input", function() { applySignColorToInput(input); saveGame(); });
+
+    input.addEventListener("input", function() {
+      applySignColorToInput(input);
+      saveGame();
+    });
   }
 
   function applyColorsToAllScoreInputs() {
@@ -730,7 +743,9 @@
     var input = document.getElementById("name-" + index);
     var name = input.value;
     var wrap = document.getElementById("namecell-" + index);
+
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
+
     saveGame();
     applyTotalVisibility();
   }
@@ -743,8 +758,9 @@
     localStorage.removeItem(PASSWORD_KEY);
     localStorage.removeItem(TOTAL_VIS_KEY);
 
+    // ✅ Reset xong hỏi mật khẩu (có thể trống). Không hỏi ẩn/hiện total nữa.
     initPasswordIfNewGame();
-    initTotalVisibilityIfNewGame();
+    ensureDefaultTotalSetting();
 
     setTimeout(function(){ location.reload(); }, 0);
   }
@@ -805,6 +821,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
+  /* ===== PDF: khôi phục rule màu như trước ===== */
   let __pdfFontCache = null;
 
   function __arrayBufferToBase64(buffer) {
@@ -868,6 +885,7 @@
     const totals = [0,1,2,3].map(i => document.getElementById("total-score-" + i).innerText);
 
     const body = [];
+    // dòng TOTAL
     body.push(["", "TOTAL", totals[0], totals[1], totals[2], totals[3]]);
 
     const table = document.getElementById("scoreTable");
@@ -881,29 +899,90 @@
       body.push([String(round), check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    doc.autoTable({ startY: 80, head, body, theme: "grid",
-      styles: { font: "NotoSans", fontStyle: "normal", halign: "center", valign: "middle", fontSize: 11, cellPadding: 6 },
-      headStyles: { font: "NotoSans", fontStyle: "bold", fillColor: [237, 237, 237], textColor: 0 },
+    function signColor(n) {
+      if (n > 0) return [0, 128, 0];
+      if (n < 0) return [204, 0, 0];
+      return [128, 128, 128];
+    }
+
+    doc.autoTable({
+      startY: 80,
+      head,
+      body,
+      theme: "grid",
+      styles: {
+        font: "NotoSans",
+        fontStyle: "normal",
+        halign: "center",
+        valign: "middle",
+        fontSize: 11,
+        cellPadding: 6
+      },
+      headStyles: {
+        font: "NotoSans",
+        fontStyle: "bold",
+        fillColor: [237, 237, 237],
+        textColor: 0
+      },
       alternateRowStyles: { fillColor: [251, 251, 251] },
-      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 } },
+      columnStyles: {
+        0: { cellWidth: 26 },      // #
+        1: { cellWidth: 56 }       // TOTAL / OX
+      },
+      didParseCell: function (data) {
+        const row = data.row, col = data.column, cell = data.cell;
+
+        // TOTAL row (row.index === 0)
+        if (data.section === "body" && row.index === 0) {
+          cell.styles.fontStyle = "bold";
+          cell.styles.fillColor = [247, 247, 247];
+
+          if (col.index === 1) {
+            cell.styles.halign = "center";
+            cell.styles.overflow = "visible"; // tránh wrap
+          }
+          if (col.index >= 2) {
+            cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
+          }
+        }
+
+        // score cells (round rows)
+        if (data.section === "body" && row.index >= 1 && col.index >= 2) {
+          cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
+        }
+
+        // O / X in column 1
+        if (data.section === "body" && col.index === 1) {
+          const v = String(cell.raw || "").trim();
+          cell.styles.fontStyle = "bold";
+          if (v === "O") cell.styles.textColor = [0, 128, 0];
+          else if (v === "X") cell.styles.textColor = [204, 0, 0];
+        }
+
+        // round number column
+        if (data.section === "body" && col.index === 0) {
+          cell.styles.textColor = [128, 128, 128];
+        }
+      }
     });
 
+    // ✅ timestamp 2 dòng, cách bảng 2 dòng, canh phải
     const now = new Date();
     const pad2 = (n) => String(n).padStart(2, "0");
-    const stamp =
+    const line1 =
       "Report được tạo vào ngày " +
       pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() + " " +
-      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds()) +
-      " bởi Nam Võ";
+      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
+    const line2 = "bởi Nam Võ";
 
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     let y = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 80) + 28;
-    if (y > pageH - 40) { doc.addPage(); y = 50; }
+    if (y > pageH - 60) { doc.addPage(); y = 50; }
 
     doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
-    doc.text(stamp, pageW - 40, y, { align: "right" });
+    doc.text([line1, line2], pageW - 40, y, { align: "right" });
 
     const filename =
       "scores_" +
@@ -923,19 +1002,20 @@
     var inp = document.getElementById("totalSwitchInput");
     if (!inp) return;
     inp.addEventListener("change", function(){
-      localStorage.setItem(TOTAL_VIS_KEY, inp.checked ? "1" : "0");
-      applyTotalVisibility();
+      setShowTotal(inp.checked);
     });
   }
 
   window.addEventListener("load", function() {
+    ensureDefaultTotalSetting();
     loadGame();
+
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
-    initPasswordIfNewGame();
-    initTotalVisibilityIfNewGame();
+
+    initPasswordIfNewGame();   // ✅ có thể trống
     bindTotalSwitch();
     applyTotalVisibility();
   });
