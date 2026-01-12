@@ -152,6 +152,56 @@
     line-height: 1.15;
   }
 
+  /* ===== Total bar (dưới tên, sticky cùng topbar) ===== */
+  .totalbar{
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .totalgrid{
+    display: grid;
+    grid-template-columns: var(--check-col) repeat(4, 1fr);
+    gap: 8px;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .total-label, .totalchip{
+    border-radius: 16px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 10px;
+    line-height: 1.1;
+    font-family: inherit;
+  }
+
+  .total-label{
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+  }
+
+  .totalchip{
+    background: #fff;
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+
+  .total-score{
+    font-weight: 900;
+    font-size: 18px;
+    display: block;
+    width: 100%;
+  }
+
   /* Wrap content */
   .wrap{
     max-width: 980px;
@@ -291,6 +341,9 @@
     .check-positive, .check-negative{ font-size: 20px; }
     .namegrid{ gap: 6px; }
     .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
+    .totalgrid{ gap: 6px; }
+    .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
+    .total-score{ font-size: 16px; }
   }
 </style>
 </head>
@@ -318,6 +371,17 @@
             <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
           </div>
         </div>
+
+        <!-- Total điểm (hiện/ẩn theo lựa chọn sau khi Reset) -->
+        <div class="totalbar" id="totalBar" style="display:none;">
+          <div class="totalgrid">
+            <div class="total-label">TOTAL</div>
+            <div class="totalchip"><span id="total-score-0" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-1" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-2" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-3" class="score-neutral total-score">0</span></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -334,13 +398,6 @@
           <tr>
             <th></th>
             <th></th><th></th><th></th><th></th>
-          </tr>
-          <tr style="display:none;">
-            <td></td>
-            <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-1" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-2" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-3" class="score-neutral total-score">0</span></td>
           </tr>
         </thead>
         <tbody></tbody>
@@ -369,8 +426,41 @@
 
   var MASTER_PASSWORD = "vophuongnam";
   var PASSWORD_KEY = STORAGE_KEY + "_pwd";
+  var TOTAL_VIS_KEY = STORAGE_KEY + "_showTotal";
 
   function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
+
+  function getShowTotal() {
+    return localStorage.getItem(TOTAL_VIS_KEY) === "1";
+  }
+
+  function applyTotalVisibility() {
+    var bar = document.getElementById("totalBar");
+    if (!bar) return;
+    bar.style.display = getShowTotal() ? "block" : "none";
+    syncTopSpacer();
+  }
+
+  // Chỉ hỏi 1 lần cho mỗi ván mới (hoặc sau khi Reset)
+  function initTotalVisibilityIfNewGame() {
+    if (localStorage.getItem(TOTAL_VIS_KEY) != null) {
+      applyTotalVisibility();
+      return;
+    }
+    if (!isNewGame()) {
+      // Không phải ván mới nhưng chưa có key (trường hợp hiếm) -> mặc định ẩn
+      localStorage.setItem(TOTAL_VIS_KEY, "0");
+      applyTotalVisibility();
+      return;
+    }
+
+    var show = confirm(
+      "Bạn muốn ẨN Total điểm hay HIỆN Total điểm?\n\n" +
+      "OK = HIỆN\nCancel = ẨN"
+    );
+    localStorage.setItem(TOTAL_VIS_KEY, show ? "1" : "0");
+    applyTotalVisibility();
+  }
 
   function initPasswordIfNewGame() {
     if (!isNewGame()) return;
@@ -456,7 +546,8 @@
       else data.headers.push({ isInput: false, value: cell ? cell.innerHTML : "" });
     }
 
-    for (var r = 2; r < table.rows.length; r++) {
+    // Data rows bắt đầu từ index 1 (thead chỉ có 1 dòng)
+    for (var r = 1; r < table.rows.length; r++) {
       var row = table.rows[r];
       var rowObj = { check: row.cells[0].innerHTML, scores: [] };
       for (var c = 1; c <= 4; c++) {
@@ -492,7 +583,7 @@
       }
 
       var table = document.getElementById("scoreTable");
-      while (table.rows.length > 2) table.deleteRow(-1);
+      while (table.rows.length > 1) table.deleteRow(-1);
 
       if (data.rows && data.rows.length) {
         data.rows.forEach(function(r) {
@@ -531,6 +622,11 @@
 
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PASSWORD_KEY);
+    localStorage.removeItem(TOTAL_VIS_KEY);
+
+    // Sau khi reset: hỏi khởi tạo mật khẩu -> hỏi ẩn/hiện Total
+    initPasswordIfNewGame();
+    initTotalVisibilityIfNewGame();
 
     setTimeout(function(){ location.reload(); }, 0);
   }
@@ -566,7 +662,7 @@
       else totalElement.className = 'score-neutral total-score';
     }
 
-    for (var rowIdx = 2; rowIdx < rowCount; rowIdx++) {
+    for (var rowIdx = 1; rowIdx < rowCount; rowIdx++) {
       var row = table.rows[rowIdx];
       var rowSum = 0;
       for (var colIdx = 1; colIdx <= 4; colIdx++) {
@@ -659,7 +755,7 @@
 
     const table = document.getElementById("scoreTable");
     let round = 0;
-    for (let r = 2; r < table.rows.length; r++) {
+    for (let r = 1; r < table.rows.length; r++) {
       round += 1;
       const row = table.rows[r];
       const check = (row.cells[0].textContent || "").trim();
@@ -747,6 +843,7 @@
       Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
     initPasswordIfNewGame();
+    initTotalVisibilityIfNewGame();
     syncTopSpacer();
   });
 
