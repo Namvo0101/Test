@@ -333,30 +333,35 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ SWITCH Total Show */
+  /* ✅ SWITCH Total Show: font/size giống button */
   .switch-wrap{
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: 999px;
+    gap: 12px;
+
+    /* giống button */
+    font-family: inherit;
+    font-size: 26px;          /* ✅ y hệt button */
+    padding: 12px 18px;       /* ✅ y hệt button */
+    border-radius: 16px;      /* ✅ y hệt button */
     border: 1px solid var(--line);
     background: #fff;
     box-shadow: var(--shadow-sm);
+
     cursor: pointer;
     user-select: none;
   }
   .switch-text{
-    font-size: 16px;
+    font-size: inherit;       /* ✅ lấy đúng 26px */
     font-weight: 900;
-    color: #111827;
     line-height: 1;
+    color: #111827;
   }
   .switch{
     position: relative;
-    width: 46px;
-    height: 26px;
+    width: 56px;
+    height: 30px;
     border-radius: 999px;
     background: var(--switch-off);
     border: 1px solid rgba(0,0,0,0.10);
@@ -367,9 +372,9 @@
     content: "";
     position: absolute;
     top: 50%;
-    left: 3px;
-    width: 20px;
-    height: 20px;
+    left: 4px;
+    width: 22px;
+    height: 22px;
     border-radius: 999px;
     background: var(--switch-knob);
     transform: translateY(-50%);
@@ -381,7 +386,7 @@
     border-color: rgba(16,185,129,0.35);
   }
   .switch.on::after{
-    left: 23px;
+    left: 30px;
   }
 
   /* Ẩn checkbox nhưng vẫn click được qua label */
@@ -391,15 +396,24 @@
     opacity: 0;
     cursor: pointer;
   }
+  .switch-wrap:active{ transform: translateY(1px); }
+  .switch-wrap:hover{ filter: brightness(0.99); }
   .switch-wrap:focus-within{
     outline: none;
     box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
   }
 
   @media (max-width: 600px){
-    :root{ --check-col: 36px; } /* JS sẽ override nếu TOTAL rộng hơn */
+    :root{ --check-col: 36px; }
     input[type="number"]{ font-size: 16px; padding: 7px 8px; }
-    button { font-size: 22px; padding: 10px 14px; border-radius: 14px; box-shadow: none; }
+
+    button{
+      font-size: 22px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      box-shadow: none;
+    }
+
     .table-card{ box-shadow: none; }
     .namebar-card{ box-shadow: none; }
     .check-positive, .check-negative{ font-size: 20px; }
@@ -409,11 +423,17 @@
     .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
     .total-score{ font-size: 16px; }
 
-    .switch-wrap{ padding: 8px 10px; box-shadow: none; }
-    .switch-text{ font-size: 14px; }
-    .switch{ width: 42px; height: 24px; }
-    .switch::after{ width: 18px; height: 18px; }
-    .switch.on::after{ left: 21px; }
+    /* ✅ mobile: switch-wrap cũng match button */
+    .switch-wrap{
+      font-size: 22px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      box-shadow: none;
+      gap: 10px;
+    }
+    .switch{ width: 52px; height: 28px; }
+    .switch::after{ width: 20px; height: 20px; }
+    .switch.on::after{ left: 28px; }
   }
 </style>
 </head>
@@ -442,7 +462,6 @@
           </div>
         </div>
 
-        <!-- Total điểm -->
         <div class="totalbar" id="totalBar" style="display:none;">
           <div class="totalgrid">
             <div class="total-label">TOTAL</div>
@@ -527,7 +546,6 @@
     inp.checked = on;
   }
 
-  // ✅ Fit cột đầu tiên theo chữ TOTAL (khi bật). Khi tắt -> thu về base để rộng hơn cho 4 cột.
   function fitFirstColumnToTOTAL() {
     var isMobile = window.matchMedia("(max-width: 600px)").matches;
     var base = isMobile ? 36 : 44;
@@ -592,7 +610,6 @@
     syncTopSpacer();
   }
 
-  // Chỉ hỏi 1 lần cho mỗi ván mới (hoặc sau khi Reset)
   function initTotalVisibilityIfNewGame() {
     if (localStorage.getItem(TOTAL_VIS_KEY) != null) {
       applyTotalVisibility();
@@ -978,12 +995,12 @@
     await doExportPDF();
   }
 
-  // ✅ bind switch change (đây là mấu chốt để nó hoạt động như switch thật)
   function bindTotalSwitch(){
     var inp = document.getElementById("totalSwitchInput");
     if (!inp) return;
     inp.addEventListener("change", function(){
-      setShowTotal(inp.checked);
+      localStorage.setItem(TOTAL_VIS_KEY, inp.checked ? "1" : "0");
+      applyTotalVisibility();
     });
   }
 
