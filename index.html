@@ -20,6 +20,7 @@
     --shadow-sm: 0 6px 16px rgba(0,0,0,0.10);
     --radius: 16px;
 
+    /* ✅ cột đầu tiên sẽ được JS tự fit theo chữ TOTAL */
     --check-col: 44px;
     --topbar-pad: 10px;
 
@@ -88,45 +89,40 @@
     overscroll-behavior-x: contain;
   }
 
-  /* ✅ Grid thẳng hàng với bảng: check + 4 cột */
+  /* ✅ Grid thẳng hàng với bảng: cột 1 + 4 cột */
   .namegrid{
     display: grid;
     grid-template-columns: var(--check-col) repeat(4, 1fr);
     gap: 8px;
-    align-items: stretch;           /* ✅ các ô tự stretch cùng chiều cao */
+    align-items: stretch;
     width: 100%;
     min-width: 0;
   }
+  .namegrid .spacer{ width: 100%; }
 
-  .namegrid .spacer{
-    width: 100%;
-  }
-
-  /* ✅ Ô tên: cho phép xuống dòng + chữ to hơn */
+  /* ✅ Ô tên */
   .namechip{
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
     border-radius: 16px;
     padding: 8px 10px;
     width: 100%;
-    height: 100%;                  /* ✅ bằng nhau về chiều cao */
-    min-height: 44px;              /* ✅ tối thiểu đẹp */
+    height: 100%;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
 
-    /* ✅ cho phép wrap */
     white-space: normal;
     overflow: visible;
     word-break: break-word;
     line-height: 1.15;
 
-    font-size: clamp(14px, 3.2vw, 20px); /* ✅ to hơn */
+    font-size: clamp(14px, 3.2vw, 20px);
     font-family: inherit;
   }
 
-  /* input tên vẫn 1 dòng khi đang sửa (bình thường) */
   .namechip input[type="text"]{
     width: 100%;
     border: none;
@@ -138,7 +134,6 @@
     font-family: inherit;
   }
 
-  /* ✅ Khi fix tên: đậm + tím + cho phép wrap */
   .name-fixed{
     font-weight: 800;
     color: var(--chip-fixed);
@@ -152,7 +147,7 @@
     line-height: 1.15;
   }
 
-  /* ===== Total bar (dưới tên, sticky cùng topbar) ===== */
+  /* ===== Total bar ===== */
   .totalbar{
     margin-top: 8px;
     padding-top: 8px;
@@ -188,9 +183,9 @@
     letter-spacing: 0.14em;
     font-weight: 700;
 
-    /* ✅ FIX: chữ TOTAL không bị cắt ở mép trái */
-    padding: 8px 4px;
+    /* ✅ để đo chuẩn + không bị cắt */
     white-space: nowrap;
+    overflow: visible;
   }
 
   .totalchip{
@@ -337,7 +332,7 @@
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
   @media (max-width: 600px){
-    :root{ --check-col: 36px; }
+    :root{ --check-col: 36px; } /* JS sẽ override nếu TOTAL rộng hơn */
     input[type="number"]{ font-size: 16px; padding: 7px 8px; }
     button { font-size: 22px; padding: 10px 14px; border-radius: 14px; box-shadow: none; }
     .table-card{ box-shadow: none; }
@@ -347,7 +342,6 @@
     .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
     .totalgrid{ gap: 6px; }
     .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
-    .total-label{ padding: 7px 4px; } /* ✅ FIX mobile */
     .total-score{ font-size: 16px; }
   }
 </style>
@@ -387,6 +381,7 @@
             <div class="totalchip"><span id="total-score-3" class="score-neutral total-score">0</span></div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -446,6 +441,52 @@
     syncTopSpacer();
   }
 
+  // ✅ Fit cột đầu tiên theo chữ TOTAL (để không bị che)
+  function fitFirstColumnToTOTAL() {
+    var isMobile = window.matchMedia("(max-width: 600px)").matches;
+    var base = isMobile ? 36 : 44; // tối thiểu
+
+    var probe = document.getElementById("totalWidthProbe");
+    if (!probe) {
+      probe = document.createElement("span");
+      probe.id = "totalWidthProbe";
+      probe.textContent = "TOTAL";
+      probe.style.position = "absolute";
+      probe.style.visibility = "hidden";
+      probe.style.whiteSpace = "nowrap";
+      probe.style.left = "-9999px";
+      probe.style.top = "-9999px";
+      document.body.appendChild(probe);
+    }
+
+    var label = document.querySelector(".total-label");
+    if (label) {
+      var cs = getComputedStyle(label);
+      probe.style.fontFamily = cs.fontFamily;
+      probe.style.fontSize = cs.fontSize;
+      probe.style.letterSpacing = cs.letterSpacing;
+      probe.style.fontWeight = cs.fontWeight;
+    } else {
+      probe.style.fontFamily = getComputedStyle(document.body).fontFamily;
+      probe.style.fontSize = "12px";
+      probe.style.letterSpacing = "0.14em";
+      probe.style.fontWeight = "700";
+    }
+
+    var textW = Math.ceil(probe.getBoundingClientRect().width);
+
+    var pad = 0;
+    if (label) {
+      var cs2 = getComputedStyle(label);
+      pad = (parseFloat(cs2.paddingLeft) || 0) + (parseFloat(cs2.paddingRight) || 0);
+    } else {
+      pad = 20;
+    }
+
+    var target = Math.max(base, textW + pad + 2);
+    document.documentElement.style.setProperty("--check-col", target + "px");
+  }
+
   // Chỉ hỏi 1 lần cho mỗi ván mới (hoặc sau khi Reset)
   function initTotalVisibilityIfNewGame() {
     if (localStorage.getItem(TOTAL_VIS_KEY) != null) {
@@ -453,7 +494,6 @@
       return;
     }
     if (!isNewGame()) {
-      // Không phải ván mới nhưng chưa có key (trường hợp hiếm) -> mặc định ẩn
       localStorage.setItem(TOTAL_VIS_KEY, "0");
       applyTotalVisibility();
       return;
@@ -618,6 +658,7 @@
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
 
     saveGame();
+    fitFirstColumnToTOTAL();
     syncTopSpacer();
   }
 
@@ -849,10 +890,15 @@
     }
     initPasswordIfNewGame();
     initTotalVisibilityIfNewGame();
+
+    fitFirstColumnToTOTAL();
     syncTopSpacer();
   });
 
-  window.addEventListener("resize", function() { syncTopSpacer(); });
+  window.addEventListener("resize", function() {
+    fitFirstColumnToTOTAL();
+    syncTopSpacer();
+  });
 
   window.addEventListener("beforeunload", function() {
     if (!__isResetting) saveGame();
