@@ -20,7 +20,6 @@
     --shadow-sm: 0 6px 16px rgba(0,0,0,0.10);
     --radius: 16px;
 
-    /* ✅ cột đầu tiên sẽ được JS tự fit theo chữ TOTAL khi bật */
     --check-col: 44px;
     --topbar-pad: 10px;
 
@@ -31,6 +30,12 @@
     --switch-off: #e5e7eb;
     --switch-on: rgba(16,185,129,0.35);
     --switch-knob: #ffffff;
+
+    /* ✅ dùng chung cho button và switch để đồng bộ font */
+    --btn-font-size: 26px;
+    --btn-padding-y: 12px;
+    --btn-padding-x: 18px;
+    --btn-radius: 16px;
   }
 
   * , *::before, *::after { box-sizing: border-box; }
@@ -52,7 +57,6 @@
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
 
-  /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
     top: 0;
@@ -64,10 +68,7 @@
     border-bottom: 1px solid var(--line);
   }
 
-  .topbar-inner{
-    max-width: 980px;
-    margin: 0 auto;
-  }
+  .topbar-inner{ max-width: 980px; margin: 0 auto; }
 
   #header{
     font-size: 12px;
@@ -93,7 +94,6 @@
     overscroll-behavior-x: contain;
   }
 
-  /* ✅ Grid thẳng hàng với bảng: cột 1 + 4 cột */
   .namegrid{
     display: grid;
     grid-template-columns: var(--check-col) repeat(4, 1fr);
@@ -104,7 +104,6 @@
   }
   .namegrid .spacer{ width: 100%; }
 
-  /* ✅ Ô tên */
   .namechip{
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
@@ -151,7 +150,6 @@
     line-height: 1.15;
   }
 
-  /* ===== Total bar ===== */
   .totalbar{
     margin-top: 8px;
     padding-top: 8px;
@@ -203,7 +201,6 @@
     width: 100%;
   }
 
-  /* Wrap content */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -211,7 +208,7 @@
     padding: 0 10px 26px;
   }
 
-  .spacer-top{ height: 140px; } /* JS auto set */
+  .spacer-top{ height: 140px; }
 
   .table-card{
     background: var(--card);
@@ -314,9 +311,9 @@
 
   button{
     margin-top: 0;
-    font-size: 26px;
-    padding: 12px 18px;
-    border-radius: 16px;
+    font-size: var(--btn-font-size);
+    padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--btn-radius);
     border: 1px solid var(--line);
     background: #fff;
     box-shadow: var(--shadow-sm);
@@ -324,6 +321,7 @@
     transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
     user-select: none;
     font-family: inherit;
+    font-weight: 400; /* ✅ button thường không bold */
   }
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
@@ -333,31 +331,38 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ SWITCH Total Show: font/size giống button */
+  /* ✅ SWITCH Total Show: đồng bộ font với button */
   .switch-wrap{
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 
-    /* giống button */
     font-family: inherit;
-    font-size: 26px;          /* ✅ y hệt button */
-    padding: 12px 18px;       /* ✅ y hệt button */
-    border-radius: 16px;      /* ✅ y hệt button */
+    font-size: var(--btn-font-size);
+    font-weight: 400;                 /* ✅ bỏ bold */
+    letter-spacing: normal;
+    line-height: 1;
+
+    padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--btn-radius);
     border: 1px solid var(--line);
     background: #fff;
     box-shadow: var(--shadow-sm);
 
     cursor: pointer;
     user-select: none;
+    transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
   }
+  .switch-wrap:active{ transform: translateY(1px); }
+  .switch-wrap:hover{ filter: brightness(0.99); }
+
   .switch-text{
-    font-size: inherit;       /* ✅ lấy đúng 26px */
-    font-weight: 900;
-    line-height: 1;
-    color: #111827;
+    font: inherit;                    /* ✅ lấy nguyên font giống button */
+    color: inherit;
+    font-weight: inherit;             /* ✅ giống button */
   }
+
   .switch{
     position: relative;
     width: 56px;
@@ -385,52 +390,33 @@
     background: var(--switch-on);
     border-color: rgba(16,185,129,0.35);
   }
-  .switch.on::after{
-    left: 30px;
-  }
+  .switch.on::after{ left: 30px; }
 
-  /* Ẩn checkbox nhưng vẫn click được qua label */
   .switch-input{
     position: absolute;
     inset: 0;
     opacity: 0;
     cursor: pointer;
   }
-  .switch-wrap:active{ transform: translateY(1px); }
-  .switch-wrap:hover{ filter: brightness(0.99); }
   .switch-wrap:focus-within{
     outline: none;
     box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
   }
 
   @media (max-width: 600px){
-    :root{ --check-col: 36px; }
-    input[type="number"]{ font-size: 16px; padding: 7px 8px; }
-
-    button{
-      font-size: 22px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      box-shadow: none;
+    :root{
+      --btn-font-size: 22px;
+      --btn-padding-y: 10px;
+      --btn-padding-x: 14px;
+      --btn-radius: 14px;
+      --check-col: 36px;
     }
 
+    button{ box-shadow: none; }
     .table-card{ box-shadow: none; }
     .namebar-card{ box-shadow: none; }
-    .check-positive, .check-negative{ font-size: 20px; }
-    .namegrid{ gap: 6px; }
-    .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
-    .totalgrid{ gap: 6px; }
-    .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
-    .total-score{ font-size: 16px; }
 
-    /* ✅ mobile: switch-wrap cũng match button */
-    .switch-wrap{
-      font-size: 22px;
-      padding: 10px 14px;
-      border-radius: 14px;
-      box-shadow: none;
-      gap: 10px;
-    }
+    .switch-wrap{ box-shadow: none; gap: 12px; }
     .switch{ width: 52px; height: 28px; }
     .switch::after{ width: 20px; height: 20px; }
     .switch.on::after{ left: 28px; }
@@ -501,7 +487,7 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
-      <!-- ✅ SWITCH đặt bên trái Reset -->
+      <!-- ✅ SWITCH Total Show (font giống button) -->
       <label class="switch-wrap" title="Total Show">
         <span class="switch-text">Total Show</span>
         <span class="switch" id="totalSwitch"></span>
@@ -526,21 +512,12 @@
   var TOTAL_VIS_KEY = STORAGE_KEY + "_showTotal";
 
   function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
-
-  function getShowTotal() {
-    return localStorage.getItem(TOTAL_VIS_KEY) === "1";
-  }
-
-  function setShowTotal(on){
-    localStorage.setItem(TOTAL_VIS_KEY, on ? "1" : "0");
-    applyTotalVisibility();
-  }
+  function getShowTotal() { return localStorage.getItem(TOTAL_VIS_KEY) === "1"; }
 
   function updateTotalSwitchUI(){
     var sw = document.getElementById("totalSwitch");
     var inp = document.getElementById("totalSwitchInput");
     if (!sw || !inp) return;
-
     var on = getShowTotal();
     sw.classList.toggle("on", on);
     inp.checked = on;
@@ -603,7 +580,6 @@
   function applyTotalVisibility() {
     var bar = document.getElementById("totalBar");
     if (!bar) return;
-
     bar.style.display = getShowTotal() ? "block" : "none";
     updateTotalSwitchUI();
     fitFirstColumnToTOTAL();
@@ -611,15 +587,8 @@
   }
 
   function initTotalVisibilityIfNewGame() {
-    if (localStorage.getItem(TOTAL_VIS_KEY) != null) {
-      applyTotalVisibility();
-      return;
-    }
-    if (!isNewGame()) {
-      localStorage.setItem(TOTAL_VIS_KEY, "0");
-      applyTotalVisibility();
-      return;
-    }
+    if (localStorage.getItem(TOTAL_VIS_KEY) != null) { applyTotalVisibility(); return; }
+    if (!isNewGame()) { localStorage.setItem(TOTAL_VIS_KEY, "0"); applyTotalVisibility(); return; }
 
     var show = confirm(
       "Bạn muốn ẨN Total điểm hay HIỆN Total điểm?\n\n" +
@@ -647,8 +616,8 @@
 
     entered = String(entered).trim();
     var gamePwd = localStorage.getItem(PASSWORD_KEY) || "";
-
     if (entered === gamePwd || entered === MASTER_PASSWORD) return true;
+
     alert("Mật khẩu sai.");
     return false;
   }
@@ -673,18 +642,11 @@
   }
 
   function bindScoreInput(input) {
-    if (input.dataset && input.dataset.bound === "1") {
-      applySignColorToInput(input);
-      return;
-    }
+    if (input.dataset && input.dataset.bound === "1") { applySignColorToInput(input); return; }
     if (input.dataset) input.dataset.bound = "1";
 
     applySignColorToInput(input);
-
-    input.addEventListener("input", function() {
-      applySignColorToInput(input);
-      saveGame();
-    });
+    input.addEventListener("input", function() { applySignColorToInput(input); saveGame(); });
   }
 
   function applyColorsToAllScoreInputs() {
@@ -769,9 +731,7 @@
     var input = document.getElementById("name-" + index);
     var name = input.value;
     var wrap = document.getElementById("namecell-" + index);
-
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
-
     saveGame();
     applyTotalVisibility();
   }
@@ -846,7 +806,6 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ===== PDF (giữ nguyên logic) ===== */
   let __pdfFontCache = null;
 
   function __arrayBufferToBase64(buffer) {
@@ -923,45 +882,11 @@
       body.push([String(round), check, vals[0], vals[1], vals[2], vals[3]]);
     }
 
-    function signColor(n) {
-      if (n > 0) return [0, 128, 0];
-      if (n < 0) return [204, 0, 0];
-      return [128, 128, 128];
-    }
-
-    doc.autoTable({
-      startY: 80,
-      head,
-      body,
-      theme: "grid",
+    doc.autoTable({ startY: 80, head, body, theme: "grid",
       styles: { font: "NotoSans", fontStyle: "normal", halign: "center", valign: "middle", fontSize: 11, cellPadding: 6 },
       headStyles: { font: "NotoSans", fontStyle: "bold", fillColor: [237, 237, 237], textColor: 0 },
       alternateRowStyles: { fillColor: [251, 251, 251] },
       columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 } },
-      didParseCell: function (data) {
-        const row = data.row, col = data.column, cell = data.cell;
-
-        if (data.section === "body" && row.index === 0) {
-          cell.styles.fontStyle = "bold";
-          cell.styles.fillColor = [247, 247, 247];
-          if (col.index >= 2) cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
-        }
-
-        if (data.section === "body" && row.index >= 1 && col.index >= 2) {
-          cell.styles.textColor = signColor(parseInt(cell.raw, 10) || 0);
-        }
-
-        if (data.section === "body" && col.index === 1) {
-          const v = String(cell.raw || "").trim();
-          cell.styles.fontStyle = "bold";
-          if (v === "O") cell.styles.textColor = [0,128,0];
-          else if (v === "X") cell.styles.textColor = [204,0,0];
-        }
-
-        if (data.section === "body" && col.index === 0) {
-          cell.styles.textColor = [128,128,128];
-        }
-      }
     });
 
     const now = new Date();
@@ -1010,10 +935,8 @@
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
-
     initPasswordIfNewGame();
     initTotalVisibilityIfNewGame();
-
     bindTotalSwitch();
     applyTotalVisibility();
   });
