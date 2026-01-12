@@ -31,7 +31,6 @@
     --switch-on: rgba(16,185,129,0.35);
     --switch-knob: #ffffff;
 
-    /* ✅ dùng chung cho button và switch để đồng bộ font */
     --btn-font-size: 26px;
     --btn-padding-y: 12px;
     --btn-padding-x: 18px;
@@ -321,7 +320,7 @@
     transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
     user-select: none;
     font-family: inherit;
-    font-weight: 400; /* ✅ button thường không bold */
+    font-weight: 400;
   }
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
@@ -331,7 +330,7 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ SWITCH Total Show: đồng bộ font với button */
+  /* ✅ SWITCH Total: đồng bộ font với button */
   .switch-wrap{
     position: relative;
     display: inline-flex;
@@ -340,7 +339,7 @@
 
     font-family: inherit;
     font-size: var(--btn-font-size);
-    font-weight: 400;                 /* ✅ bỏ bold */
+    font-weight: 400;
     letter-spacing: normal;
     line-height: 1;
 
@@ -358,9 +357,9 @@
   .switch-wrap:hover{ filter: brightness(0.99); }
 
   .switch-text{
-    font: inherit;                    /* ✅ lấy nguyên font giống button */
+    font: inherit;
     color: inherit;
-    font-weight: inherit;             /* ✅ giống button */
+    font-weight: inherit;
   }
 
   .switch{
@@ -487,11 +486,11 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
-      <!-- ✅ SWITCH Total Show (font giống button) -->
-      <label class="switch-wrap" title="Total Show">
-        <span class="switch-text">Total Show</span>
+      <!-- ✅ đổi chữ thành "Total" -->
+      <label class="switch-wrap" title="Total">
+        <span class="switch-text">Total</span>
         <span class="switch" id="totalSwitch"></span>
-        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total Show">
+        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total">
       </label>
 
       <button class="btn-danger" onclick="resetGame()">Reset</button>
