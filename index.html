@@ -186,7 +186,6 @@
     font-size: 12px;
     letter-spacing: 0.14em;
     font-weight: 700;
-
     white-space: nowrap;
     overflow: visible;
   }
@@ -334,8 +333,9 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ SWITCH: Total Show (đặt bên trái Reset) */
+  /* ✅ SWITCH Total Show */
   .switch-wrap{
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -384,11 +384,12 @@
     left: 23px;
   }
 
-  /* accessibility: ẩn checkbox nhưng vẫn focus được */
+  /* Ẩn checkbox nhưng vẫn click được qua label */
   .switch-input{
     position: absolute;
+    inset: 0;
     opacity: 0;
-    pointer-events: none;
+    cursor: pointer;
   }
   .switch-wrap:focus-within{
     outline: none;
@@ -441,7 +442,7 @@
           </div>
         </div>
 
-        <!-- Total điểm (hiện/ẩn theo lựa chọn sau khi Reset hoặc switch) -->
+        <!-- Total điểm -->
         <div class="totalbar" id="totalBar" style="display:none;">
           <div class="totalgrid">
             <div class="total-label">TOTAL</div>
@@ -482,10 +483,10 @@
     </div>
     <div class="controls-row">
       <!-- ✅ SWITCH đặt bên trái Reset -->
-      <label class="switch-wrap" onclick="toggleTotal()" title="Total Show">
+      <label class="switch-wrap" title="Total Show">
         <span class="switch-text">Total Show</span>
         <span class="switch" id="totalSwitch"></span>
-        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total Show" />
+        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total Show">
       </label>
 
       <button class="btn-danger" onclick="resetGame()">Reset</button>
@@ -509,6 +510,11 @@
 
   function getShowTotal() {
     return localStorage.getItem(TOTAL_VIS_KEY) === "1";
+  }
+
+  function setShowTotal(on){
+    localStorage.setItem(TOTAL_VIS_KEY, on ? "1" : "0");
+    applyTotalVisibility();
   }
 
   function updateTotalSwitchUI(){
@@ -579,17 +585,11 @@
   function applyTotalVisibility() {
     var bar = document.getElementById("totalBar");
     if (!bar) return;
-    bar.style.display = getShowTotal() ? "block" : "none";
 
+    bar.style.display = getShowTotal() ? "block" : "none";
     updateTotalSwitchUI();
     fitFirstColumnToTOTAL();
     syncTopSpacer();
-  }
-
-  function toggleTotal(){
-    var next = !getShowTotal();
-    localStorage.setItem(TOTAL_VIS_KEY, next ? "1" : "0");
-    applyTotalVisibility();
   }
 
   // Chỉ hỏi 1 lần cho mỗi ván mới (hoặc sau khi Reset)
@@ -978,6 +978,15 @@
     await doExportPDF();
   }
 
+  // ✅ bind switch change (đây là mấu chốt để nó hoạt động như switch thật)
+  function bindTotalSwitch(){
+    var inp = document.getElementById("totalSwitchInput");
+    if (!inp) return;
+    inp.addEventListener("change", function(){
+      setShowTotal(inp.checked);
+    });
+  }
+
   window.addEventListener("load", function() {
     loadGame();
     for (var i = 0; i < 4; i++) {
@@ -988,6 +997,7 @@
     initPasswordIfNewGame();
     initTotalVisibilityIfNewGame();
 
+    bindTotalSwitch();
     applyTotalVisibility();
   });
 
