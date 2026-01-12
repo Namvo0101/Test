@@ -27,6 +27,10 @@
     --chip-bg: #f3f4f6;
     --chip-border: rgba(0,0,0,0.16);
     --chip-fixed: #6d28d9;
+
+    --switch-off: #e5e7eb;
+    --switch-on: rgba(16,185,129,0.35);
+    --switch-knob: #ffffff;
   }
 
   * , *::before, *::after { box-sizing: border-box; }
@@ -330,24 +334,65 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
-  /* ✅ Toggle TOTAL button */
-  .toggle-total{
-    font-size: 16px;
-    padding: 12px 16px;
+  /* ✅ SWITCH: Total Show (đặt bên trái Reset) */
+  .switch-wrap{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
     border-radius: 999px;
-    font-weight: 900;
-    letter-spacing: 0.02em;
+    border: 1px solid var(--line);
+    background: #fff;
     box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    user-select: none;
   }
-  .toggle-total.on{
-    background: rgba(16,185,129,0.12);
+  .switch-text{
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1;
+  }
+  .switch{
+    position: relative;
+    width: 46px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--switch-off);
+    border: 1px solid rgba(0,0,0,0.10);
+    transition: background .18s ease, border-color .18s ease;
+    flex: 0 0 auto;
+  }
+  .switch::after{
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: var(--switch-knob);
+    transform: translateY(-50%);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: left .18s ease;
+  }
+  .switch.on{
+    background: var(--switch-on);
     border-color: rgba(16,185,129,0.35);
-    color: #065f46;
   }
-  .toggle-total.off{
-    background: #f3f4f6;
-    border-color: rgba(0,0,0,0.12);
-    color: #374151;
+  .switch.on::after{
+    left: 23px;
+  }
+
+  /* accessibility: ẩn checkbox nhưng vẫn focus được */
+  .switch-input{
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .switch-wrap:focus-within{
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
   }
 
   @media (max-width: 600px){
@@ -363,7 +408,11 @@
     .total-label, .totalchip{ min-height: 36px; padding: 7px 8px; }
     .total-score{ font-size: 16px; }
 
-    .toggle-total{ font-size: 14px; padding: 10px 12px; border-radius: 999px; }
+    .switch-wrap{ padding: 8px 10px; box-shadow: none; }
+    .switch-text{ font-size: 14px; }
+    .switch{ width: 42px; height: 24px; }
+    .switch::after{ width: 18px; height: 18px; }
+    .switch.on::after{ left: 21px; }
   }
 </style>
 </head>
@@ -392,7 +441,7 @@
           </div>
         </div>
 
-        <!-- Total điểm (hiện/ẩn theo lựa chọn sau khi Reset hoặc nút toggle) -->
+        <!-- Total điểm (hiện/ẩn theo lựa chọn sau khi Reset hoặc switch) -->
         <div class="totalbar" id="totalBar" style="display:none;">
           <div class="totalgrid">
             <div class="total-label">TOTAL</div>
@@ -432,8 +481,13 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
-      <!-- ✅ nút chỉ tên "Total Show" và đặt bên trái Reset -->
-      <button id="toggleTotalBtn" class="toggle-total off" type="button" onclick="toggleTotal()">Total Show</button>
+      <!-- ✅ SWITCH đặt bên trái Reset -->
+      <label class="switch-wrap" onclick="toggleTotal()" title="Total Show">
+        <span class="switch-text">Total Show</span>
+        <span class="switch" id="totalSwitch"></span>
+        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total Show" />
+      </label>
+
       <button class="btn-danger" onclick="resetGame()">Reset</button>
       <button class="btn-success" onclick="exportPDF()">Export PDF</button>
     </div>
@@ -457,13 +511,14 @@
     return localStorage.getItem(TOTAL_VIS_KEY) === "1";
   }
 
-  function updateToggleTotalBtnUI(){
-    var btn = document.getElementById("toggleTotalBtn");
-    if (!btn) return;
+  function updateTotalSwitchUI(){
+    var sw = document.getElementById("totalSwitch");
+    var inp = document.getElementById("totalSwitchInput");
+    if (!sw || !inp) return;
+
     var on = getShowTotal();
-    btn.classList.toggle("on", on);
-    btn.classList.toggle("off", !on);
-    btn.textContent = "Total Show"; // ✅ luôn chỉ một tên
+    sw.classList.toggle("on", on);
+    inp.checked = on;
   }
 
   // ✅ Fit cột đầu tiên theo chữ TOTAL (khi bật). Khi tắt -> thu về base để rộng hơn cho 4 cột.
@@ -526,7 +581,7 @@
     if (!bar) return;
     bar.style.display = getShowTotal() ? "block" : "none";
 
-    updateToggleTotalBtnUI();
+    updateTotalSwitchUI();
     fitFirstColumnToTOTAL();
     syncTopSpacer();
   }
@@ -635,7 +690,6 @@
       else data.headers.push({ isInput: false, value: cell ? cell.innerHTML : "" });
     }
 
-    // Data rows bắt đầu từ index 1 (thead chỉ có 1 dòng)
     for (var r = 1; r < table.rows.length; r++) {
       var row = table.rows[r];
       var rowObj = { check: row.cells[0].innerHTML, scores: [] };
@@ -713,7 +767,6 @@
     localStorage.removeItem(PASSWORD_KEY);
     localStorage.removeItem(TOTAL_VIS_KEY);
 
-    // Sau khi reset: hỏi khởi tạo mật khẩu -> hỏi ẩn/hiện Total
     initPasswordIfNewGame();
     initTotalVisibilityIfNewGame();
 
@@ -935,7 +988,6 @@
     initPasswordIfNewGame();
     initTotalVisibilityIfNewGame();
 
-    // đảm bảo UI toggle + cột + spacer đúng ngay khi load
     applyTotalVisibility();
   });
 
