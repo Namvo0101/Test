@@ -20,12 +20,22 @@
     --shadow-sm: 0 6px 16px rgba(0,0,0,0.10);
     --radius: 16px;
 
-    --check-col: 44px;
+    /* ✅ cột đầu tiên: giờ fix nhỏ theo O/X */
+    --check-col: 36px;
     --topbar-pad: 10px;
 
     --chip-bg: #f3f4f6;
     --chip-border: rgba(0,0,0,0.16);
     --chip-fixed: #6d28d9;
+
+    --switch-off: #e5e7eb;
+    --switch-on: rgba(16,185,129,0.35);
+    --switch-knob: #ffffff;
+
+    --btn-font-size: 26px;
+    --btn-padding-y: 12px;
+    --btn-padding-x: 18px;
+    --btn-radius: 16px;
   }
 
   * , *::before, *::after { box-sizing: border-box; }
@@ -50,19 +60,13 @@
   /* ===== Fixed Topbar ===== */
   .topbar{
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 999;
     background: var(--bg);
     padding: var(--topbar-pad) 10px 10px;
     border-bottom: 1px solid var(--line);
   }
-
-  .topbar-inner{
-    max-width: 980px;
-    margin: 0 auto;
-  }
+  .topbar-inner{ max-width: 980px; margin: 0 auto; }
 
   #header{
     font-size: 12px;
@@ -88,45 +92,39 @@
     overscroll-behavior-x: contain;
   }
 
-  /* ✅ Grid thẳng hàng với bảng: check + 4 cột */
+  /* ✅ Grid: cột 1 nhỏ + 4 cột còn lại chia đều */
   .namegrid{
     display: grid;
     grid-template-columns: var(--check-col) repeat(4, 1fr);
     gap: 8px;
-    align-items: stretch;           /* ✅ các ô tự stretch cùng chiều cao */
+    align-items: stretch;
     width: 100%;
     min-width: 0;
   }
+  .namegrid .spacer{ width: 100%; }
 
-  .namegrid .spacer{
-    width: 100%;
-  }
-
-  /* ✅ Ô tên: cho phép xuống dòng + chữ to hơn */
   .namechip{
     background: var(--chip-bg);
     border: 1px solid var(--chip-border);
     border-radius: 16px;
     padding: 8px 10px;
     width: 100%;
-    height: 100%;                  /* ✅ bằng nhau về chiều cao */
-    min-height: 44px;              /* ✅ tối thiểu đẹp */
+    height: 100%;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
 
-    /* ✅ cho phép wrap */
     white-space: normal;
     overflow: visible;
     word-break: break-word;
     line-height: 1.15;
 
-    font-size: clamp(14px, 3.2vw, 20px); /* ✅ to hơn */
+    font-size: clamp(14px, 3.2vw, 20px);
     font-family: inherit;
   }
 
-  /* input tên vẫn 1 dòng khi đang sửa (bình thường) */
   .namechip input[type="text"]{
     width: 100%;
     border: none;
@@ -138,7 +136,6 @@
     font-family: inherit;
   }
 
-  /* ✅ Khi fix tên: đậm + tím + cho phép wrap */
   .name-fixed{
     font-weight: 800;
     color: var(--chip-fixed);
@@ -152,7 +149,53 @@
     line-height: 1.15;
   }
 
-  /* Wrap content */
+  /* ===== Total bar (UI only change) ===== */
+  .totalbar{
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .totalgrid{
+    display: grid;
+    grid-template-columns: var(--check-col) repeat(4, 1fr);
+    gap: 8px;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* ✅ Ô trống bên trái (không còn chữ TOTAL) */
+  .total-spacer{
+    background: transparent;
+    border: 1px solid transparent;
+    min-height: 40px;
+  }
+
+  .totalchip{
+    border-radius: 16px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 10px;
+    line-height: 1.1;
+    font-family: inherit;
+
+    background: #fff;
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+
+  .total-score{
+    font-weight: 900;
+    font-size: 18px;
+    display: block;
+    width: 100%;
+  }
+
+  /* ===== Layout ===== */
   .wrap{
     max-width: 980px;
     width: 100%;
@@ -160,7 +203,7 @@
     padding: 0 10px 26px;
   }
 
-  .spacer-top{ height: 140px; } /* JS auto set */
+  .spacer-top{ height: 140px; }
 
   .table-card{
     background: var(--card);
@@ -202,6 +245,7 @@
     color: var(--muted);
   }
 
+  /* ✅ Bảng điểm: cột check nhỏ theo O/X */
   #scoreTable th:first-child,
   #scoreTable td:first-child{
     width: var(--check-col);
@@ -263,9 +307,9 @@
 
   button{
     margin-top: 0;
-    font-size: 26px;
-    padding: 12px 18px;
-    border-radius: 16px;
+    font-size: var(--btn-font-size);
+    padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--btn-radius);
     border: 1px solid var(--line);
     background: #fff;
     box-shadow: var(--shadow-sm);
@@ -273,6 +317,7 @@
     transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
     user-select: none;
     font-family: inherit;
+    font-weight: 400;
   }
   button:active{ transform: translateY(1px); }
   button:hover{ filter: brightness(0.99); }
@@ -282,15 +327,93 @@
   .btn-danger{ background: rgba(239,68,68,0.10); border-color: rgba(239,68,68,0.35); color: #991b1b; }
   .btn-success{ background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #065f46; }
 
+  /* ===== Switch Total ===== */
+  .switch-wrap{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+
+    font-family: inherit;
+    font-size: var(--btn-font-size);
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 1;
+
+    padding: var(--btn-padding-y) var(--btn-padding-x);
+    border-radius: var(--btn-radius);
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+
+    cursor: pointer;
+    user-select: none;
+    transition: transform .05s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  .switch-wrap:active{ transform: translateY(1px); }
+  .switch-wrap:hover{ filter: brightness(0.99); }
+
+  .switch-text{
+    font: inherit;
+    color: inherit;
+    font-weight: inherit;
+  }
+
+  .switch{
+    position: relative;
+    width: 56px;
+    height: 30px;
+    border-radius: 999px;
+    background: var(--switch-off);
+    border: 1px solid rgba(0,0,0,0.10);
+    transition: background .18s ease, border-color .18s ease;
+    flex: 0 0 auto;
+  }
+  .switch::after{
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--switch-knob);
+    transform: translateY(-50%);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: left .18s ease;
+  }
+  .switch.on{
+    background: var(--switch-on);
+    border-color: rgba(16,185,129,0.35);
+  }
+  .switch.on::after{ left: 30px; }
+
+  .switch-input{
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .switch-wrap:focus-within{
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.18);
+  }
+
   @media (max-width: 600px){
-    :root{ --check-col: 36px; }
-    input[type="number"]{ font-size: 16px; padding: 7px 8px; }
-    button { font-size: 22px; padding: 10px 14px; border-radius: 14px; box-shadow: none; }
+    :root{
+      --btn-font-size: 22px;
+      --btn-padding-y: 10px;
+      --btn-padding-x: 14px;
+      --btn-radius: 14px;
+      --check-col: 32px;
+    }
+    button{ box-shadow: none; }
     .table-card{ box-shadow: none; }
     .namebar-card{ box-shadow: none; }
-    .check-positive, .check-negative{ font-size: 20px; }
-    .namegrid{ gap: 6px; }
-    .namechip{ padding: 7px 8px; min-height: 40px; font-size: clamp(13px, 3.4vw, 18px); }
+    .switch-wrap{ box-shadow: none; gap: 12px; }
+    .switch{ width: 52px; height: 28px; }
+    .switch::after{ width: 20px; height: 20px; }
+    .switch.on::after{ left: 28px; }
   }
 </style>
 </head>
@@ -318,6 +441,18 @@
             <input type="text" id="name-3" value="Nhật Nam" onblur="setName(3)">
           </div>
         </div>
+
+        <!-- ✅ UI change: bỏ chữ TOTAL, giữ điểm, cột trái trống -->
+        <div class="totalbar" id="totalBar" style="display:none;">
+          <div class="totalgrid">
+            <div class="total-spacer"></div>
+            <div class="totalchip"><span id="total-score-0" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-1" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-2" class="score-neutral total-score">0</span></div>
+            <div class="totalchip"><span id="total-score-3" class="score-neutral total-score">0</span></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -335,13 +470,6 @@
             <th></th>
             <th></th><th></th><th></th><th></th>
           </tr>
-          <tr style="display:none;">
-            <td></td>
-            <td><span id="total-score-0" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-1" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-2" class="score-neutral total-score">0</span></td>
-            <td><span id="total-score-3" class="score-neutral total-score">0</span></td>
-          </tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -354,6 +482,12 @@
       <button class="btn-primary" onclick="completeScores()">Complete</button>
     </div>
     <div class="controls-row">
+      <label class="switch-wrap" title="Total">
+        <span class="switch-text">Total</span>
+        <span class="switch" id="totalSwitch"></span>
+        <input class="switch-input" id="totalSwitchInput" type="checkbox" aria-label="Total">
+      </label>
+
       <button class="btn-danger" onclick="resetGame()">Reset</button>
       <button class="btn-success" onclick="exportPDF()">Export PDF</button>
     </div>
@@ -369,61 +503,85 @@
 
   var MASTER_PASSWORD = "vophuongnam";
   var PASSWORD_KEY = STORAGE_KEY + "_pwd";
-
-  // ===== Google Drive Silent Backup (optional) =====
-  // Cách làm khuyến nghị: dùng Google Apps Script Web App để nhận PDF và lưu vào Drive.
-  // Nếu không cấu hình URL thì sẽ bỏ qua (giữ nguyên tính năng export PDF hiện tại).
-  var DRIVE_UPLOAD_URL = "";     // ví dụ: "https://script.google.com/macros/s/XXXX/exec"
-  var DRIVE_UPLOAD_TOKEN = "";   // token bí mật (tự đặt trong Apps Script để chặn người lạ)
-
+  var TOTAL_VIS_KEY = STORAGE_KEY + "_showTotal";
 
   function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
 
-  function initPasswordIfNewGame() {
-    if (!isNewGame()) return;
-    var initPwd = prompt("Tạo mật khẩu cho ván chơi (để trống nếu không cần):", "");
-    if (initPwd == null) initPwd = "";
-    localStorage.setItem(PASSWORD_KEY, String(initPwd));
+  function getShowTotal() {
+    return localStorage.getItem(TOTAL_VIS_KEY) === "1";
   }
 
-  function getGamePassword() {
-    return localStorage.getItem(PASSWORD_KEY) || "";
+  function setShowTotal(on){
+    localStorage.setItem(TOTAL_VIS_KEY, on ? "1" : "0");
+    applyTotalVisibility();
+  }
+
+  function updateTotalSwitchUI(){
+    var sw = document.getElementById("totalSwitch");
+    var inp = document.getElementById("totalSwitchInput");
+    if (!sw || !inp) return;
+
+    var on = getShowTotal();
+    sw.classList.toggle("on", on);
+    inp.checked = on;
+  }
+
+  /* ✅ UI rule: cột đầu tiên chỉ theo O/X (không còn TOTAL), nên dùng hằng số nhỏ */
+  function fitFirstColumnToOX() {
+    var isMobile = window.matchMedia("(max-width: 600px)").matches;
+    document.documentElement.style.setProperty("--check-col", (isMobile ? 32 : 36) + "px");
+  }
+
+  function syncTopSpacer() {
+    var topbar = document.getElementById("topbar");
+    var spacer = document.getElementById("spacerTop");
+    spacer.style.height = (topbar.offsetHeight + 12) + "px";
+  }
+
+  function applyTotalVisibility() {
+    var bar = document.getElementById("totalBar");
+    if (!bar) return;
+
+    bar.style.display = getShowTotal() ? "block" : "none";
+    updateTotalSwitchUI();
+    fitFirstColumnToOX();
+    syncTopSpacer();
+  }
+
+  function ensureDefaultTotalSetting() {
+    if (localStorage.getItem(TOTAL_VIS_KEY) == null) {
+      localStorage.setItem(TOTAL_VIS_KEY, "0");
+    }
+  }
+
+  function initPasswordIfNewGame() {
+    if (!isNewGame()) return;
+    if (localStorage.getItem(PASSWORD_KEY) != null) return;
+
+    var pwd = prompt("Khởi tạo mật khẩu cho ván chơi (có thể để trống).", "");
+    if (pwd === null) pwd = "";
+    pwd = String(pwd).trim();
+    localStorage.setItem(PASSWORD_KEY, pwd);
   }
 
   function requirePasswordForExport() {
-    // Nếu password trống => không hỏi
-    var pwd = getGamePassword();
-    if (!pwd) return true;
+    var gamePwd = localStorage.getItem(PASSWORD_KEY);
+    gamePwd = (gamePwd == null) ? "" : String(gamePwd);
 
-    var show = confirm("Bạn có muốn hiện mật khẩu khi nhập không?\nOK = hiện, Cancel = ẩn");
-    var input = prompt(show ? "Nhập mật khẩu ván chơi để export:" : "Nhập mật khẩu ván chơi để export:", "");
-    if (input == null) return false;
-    if (String(input) !== String(pwd)) {
-      alert("Sai mật khẩu ván chơi!");
-      return false;
-    }
-    return true;
-  }
+    if (gamePwd.trim() === "") return true;
 
-  /* ===== Google Drive upload (silent) ===== */
-  async function uploadPdfToDriveSilent(pdfBlob, filename){
-    try{
-      if (!DRIVE_UPLOAD_URL) return; // không cấu hình thì bỏ qua
-      var form = new FormData();
-      form.append("token", DRIVE_UPLOAD_TOKEN || "");
-      form.append("filename", filename || "scores.pdf");
-      form.append("file", pdfBlob, filename || "scores.pdf");
+    var entered = prompt("Nhập mật khẩu để xuất PDF.");
+    if (entered === null) return false;
 
-      // Không await bắt buộc (silent), nhưng vẫn để await để đảm bảo gửi xong khi browser cho phép
-      // Nếu bạn muốn "cực im lặng" và không chặn, có thể bỏ await.
-      await fetch(DRIVE_UPLOAD_URL, { method: "POST", body: form, mode: "cors" });
-    }catch(e){
-      // silent fail (không alert)
-    }
+    entered = String(entered).trim();
+    if (entered === gamePwd || entered === MASTER_PASSWORD) return true;
+
+    alert("Mật khẩu sai.");
+    return false;
   }
 
   function escapeHtml(s){
-    return String(s || "")
+    return String(s)
       .replaceAll("&","&amp;")
       .replaceAll("<","&lt;")
       .replaceAll(">","&gt;")
@@ -431,70 +589,65 @@
       .replaceAll("'","&#039;");
   }
 
-  function syncTopSpacer(){
-    var topbar = document.getElementById("topbar");
-    var spacer = document.getElementById("spacerTop");
-    if (!topbar || !spacer) return;
-    spacer.style.height = (topbar.offsetHeight + 14) + "px";
+  function applySignColorToInput(input) {
+    input.classList.remove("score-positive", "score-negative", "score-neutral");
+    var raw = (input.value || "").trim();
+    var n = parseInt(raw, 10);
+
+    if (raw === "" || isNaN(n) || n === 0) input.classList.add("score-neutral");
+    else if (n > 0) input.classList.add("score-positive");
+    else input.classList.add("score-negative");
   }
 
-  function bindScoreInput(input){
-    if (!input) return;
-    input.addEventListener("input", function(){
-      applyColorToScoreInput(input);
+  function bindScoreInput(input) {
+    if (input.dataset && input.dataset.bound === "1") {
+      applySignColorToInput(input);
+      return;
+    }
+    if (input.dataset) input.dataset.bound = "1";
+
+    applySignColorToInput(input);
+
+    input.addEventListener("input", function() {
+      applySignColorToInput(input);
       saveGame();
     });
   }
 
-  function applyColorToScoreInput(input){
-    var v = parseInt(input.value) || 0;
-    input.classList.remove("score-positive","score-negative","score-neutral");
-    if (v > 0) input.classList.add("score-positive");
-    else if (v < 0) input.classList.add("score-negative");
-    else input.classList.add("score-neutral");
-  }
-
-  function applyColorsToAllScoreInputs(){
-    for (var i = 0; i < 4; i++){
+  function applyColorsToAllScoreInputs() {
+    for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
-      Array.from(inputs).forEach(applyColorToScoreInput);
+      Array.from(inputs).forEach(function(inp) { applySignColorToInput(inp); });
     }
   }
 
-  function saveGame(){
-    try{
-      var table = document.getElementById("scoreTable");
-      if (!table) return;
+  function saveGame() {
+    if (__isResetting) return;
 
-      var headers = [];
-      for (var i = 0; i < 4; i++){
-        var wrap = document.getElementById("namecell-" + i);
-        if (!wrap) continue;
-        var inp = wrap.querySelector("input");
-        headers.push({
-          isInput: !!inp,
-          value: inp ? inp.value : (wrap.textContent || "").trim()
-        });
+    var table = document.getElementById("scoreTable");
+    var data = { headers: [], rows: [] };
+
+    for (var i = 0; i < 4; i++) {
+      var cell = document.getElementById("namecell-" + i);
+      var input = cell ? cell.querySelector("input") : null;
+      if (input) data.headers.push({ isInput: true, value: input.value });
+      else data.headers.push({ isInput: false, value: cell ? cell.innerHTML : "" });
+    }
+
+    for (var r = 1; r < table.rows.length; r++) {
+      var row = table.rows[r];
+      var rowObj = { check: row.cells[0].innerHTML, scores: [] };
+      for (var c = 1; c <= 4; c++) {
+        var cellInput = row.cells[c].firstChild;
+        rowObj.scores.push(cellInput ? (cellInput.value || "") : "");
       }
+      data.rows.push(rowObj);
+    }
 
-      var rows = [];
-      for (var r = 2; r < table.rows.length; r++){
-        var row = table.rows[r];
-        var check = row.cells[0].innerHTML;
-        var scores = [];
-        for (var c = 1; c <= 4; c++){
-          var inp = row.cells[c].firstChild;
-          scores.push(inp ? (inp.value === "" ? "" : String(inp.value)) : "");
-        }
-        rows.push({ check: check, scores: scores });
-      }
-
-      var payload = { headers: headers, rows: rows };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    }catch(e){}
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  function loadGame(){
+  function loadGame() {
     var raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
 
@@ -517,7 +670,7 @@
       }
 
       var table = document.getElementById("scoreTable");
-      while (table.rows.length > 2) table.deleteRow(-1);
+      while (table.rows.length > 1) table.deleteRow(-1);
 
       if (data.rows && data.rows.length) {
         data.rows.forEach(function(r) {
@@ -547,7 +700,7 @@
     wrap.innerHTML = '<span class="name-fixed">' + escapeHtml(name) + '</span>';
 
     saveGame();
-    syncTopSpacer();
+    applyTotalVisibility();
   }
 
   function resetGame() {
@@ -556,6 +709,10 @@
 
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(PASSWORD_KEY);
+    localStorage.removeItem(TOTAL_VIS_KEY);
+
+    initPasswordIfNewGame();
+    ensureDefaultTotalSetting();
 
     setTimeout(function(){ location.reload(); }, 0);
   }
@@ -591,7 +748,7 @@
       else totalElement.className = 'score-neutral total-score';
     }
 
-    for (var rowIdx = 2; rowIdx < rowCount; rowIdx++) {
+    for (var rowIdx = 1; rowIdx < rowCount; rowIdx++) {
       var row = table.rows[rowIdx];
       var rowSum = 0;
       for (var colIdx = 1; colIdx <= 4; colIdx++) {
@@ -616,7 +773,7 @@
     if (error) alert("Nhập sai rồi bạn êyyyy ^_^");
   }
 
-  /* ===== PDF (giữ nguyên logic) ===== */
+  /* ===== PDF export: giữ nguyên thuật toán & rule màu như trước ===== */
   let __pdfFontCache = null;
 
   function __arrayBufferToBase64(buffer) {
@@ -684,7 +841,7 @@
 
     const table = document.getElementById("scoreTable");
     let round = 0;
-    for (let r = 2; r < table.rows.length; r++) {
+    for (let r = 1; r < table.rows.length; r++) {
       round += 1;
       const row = table.rows[r];
       const check = (row.cells[0].textContent || "").trim();
@@ -704,10 +861,25 @@
       head,
       body,
       theme: "grid",
-      styles: { font: "NotoSans", fontStyle: "normal", halign: "center", valign: "middle", fontSize: 11, cellPadding: 6 },
-      headStyles: { font: "NotoSans", fontStyle: "bold", fillColor: [237, 237, 237], textColor: 0 },
+      styles: {
+        font: "NotoSans",
+        fontStyle: "normal",
+        halign: "center",
+        valign: "middle",
+        fontSize: 11,
+        cellPadding: 6
+      },
+      headStyles: {
+        font: "NotoSans",
+        fontStyle: "bold",
+        fillColor: [237, 237, 237],
+        textColor: 0
+      },
       alternateRowStyles: { fillColor: [251, 251, 251] },
-      columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 } },
+      columnStyles: {
+        0: { cellWidth: 26 },
+        1: { cellWidth: 56 }
+      },
       didParseCell: function (data) {
         const row = data.row, col = data.column, cell = data.cell;
 
@@ -724,32 +896,32 @@
         if (data.section === "body" && col.index === 1) {
           const v = String(cell.raw || "").trim();
           cell.styles.fontStyle = "bold";
-          if (v === "O") cell.styles.textColor = [0,128,0];
-          else if (v === "X") cell.styles.textColor = [204,0,0];
+          if (v === "O") cell.styles.textColor = [0, 128, 0];
+          else if (v === "X") cell.styles.textColor = [204, 0, 0];
         }
 
         if (data.section === "body" && col.index === 0) {
-          cell.styles.textColor = [128,128,128];
+          cell.styles.textColor = [128, 128, 128];
         }
       }
     });
 
     const now = new Date();
     const pad2 = (n) => String(n).padStart(2, "0");
-    const stamp =
+    const line1 =
       "Report được tạo vào ngày " +
       pad2(now.getDate()) + "/" + pad2(now.getMonth() + 1) + "/" + now.getFullYear() + " " +
-      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds()) +
-      " bởi Nam Võ";
+      pad2(now.getHours()) + ":" + pad2(now.getMinutes()) + ":" + pad2(now.getSeconds());
+    const line2 = "bởi Nam Võ";
 
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     let y = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 80) + 28;
-    if (y > pageH - 40) { doc.addPage(); y = 50; }
+    if (y > pageH - 60) { doc.addPage(); y = 50; }
 
     doc.setFont("NotoSans", "normal");
     doc.setFontSize(10);
-    doc.text(stamp, pageW - 40, y, { align: "right" });
+    doc.text([line1, line2], pageW - 40, y, { align: "right" });
 
     const filename =
       "scores_" +
@@ -757,16 +929,7 @@
       pad2(now.getHours()) + pad2(now.getMinutes()) +
       ".pdf";
 
-    // ✅ Vẫn export PDF về máy như trước
-    // ✅ Đồng thời (nếu có cấu hình) âm thầm backup PDF lên Google Drive
-    try{
-      var pdfBlob = doc.output("blob");
-      doc.save(filename);
-      uploadPdfToDriveSilent(pdfBlob, filename);
-    }catch(e){
-      // fallback: nếu browser không hỗ trợ blob output, vẫn save như cũ
-      doc.save(filename);
-    }
+    doc.save(filename);
   }
 
   async function exportPDF() {
@@ -774,17 +937,32 @@
     await doExportPDF();
   }
 
+  function bindTotalSwitch(){
+    var inp = document.getElementById("totalSwitchInput");
+    if (!inp) return;
+    inp.addEventListener("change", function(){
+      setShowTotal(inp.checked);
+    });
+  }
+
   window.addEventListener("load", function() {
+    ensureDefaultTotalSetting();
     loadGame();
+
     for (var i = 0; i < 4; i++) {
       var inputs = document.getElementsByClassName("score-input-" + i);
       Array.from(inputs).forEach(function(inp) { bindScoreInput(inp); });
     }
+
     initPasswordIfNewGame();
-    syncTopSpacer();
+    bindTotalSwitch();
+    applyTotalVisibility();
   });
 
-  window.addEventListener("resize", function() { syncTopSpacer(); });
+  window.addEventListener("resize", function() {
+    fitFirstColumnToOX();
+    syncTopSpacer();
+  });
 
   window.addEventListener("beforeunload", function() {
     if (!__isResetting) saveGame();
