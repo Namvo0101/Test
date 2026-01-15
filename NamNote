@@ -1,0 +1,48 @@
+// ====== CONFIG ======
+const TOKEN = "CHANGE_ME_TO_A_RANDOM_LONG_TOKEN"; // đổi thành chuỗi dài khó đoán
+const FOLDER_ID = ""; // dán Folder ID nếu muốn lưu vào folder riêng, để "" nếu lưu My Drive
+
+function doPost(e) {
+  try {
+    const body = e && e.postData && e.postData.contents ? e.postData.contents : "";
+    const data = JSON.parse(body || "{}");
+
+    if (!data.token || String(data.token) !== String(TOKEN)) {
+      return _json({ ok: false, error: "INVALID_TOKEN" }, 401);
+    }
+
+    const filename = (data.filename && String(data.filename).trim())
+      ? String(data.filename).trim()
+      : ("scores_" + Date.now() + ".pdf");
+
+    const b64 = data.base64 || "";
+    if (!b64) return _json({ ok: false, error: "NO_FILE_BASE64" }, 400);
+
+    const bytes = Utilities.base64Decode(b64);
+    const blob = Utilities.newBlob(bytes, "application/pdf", filename);
+
+    let file;
+    if (FOLDER_ID) {
+      const folder = DriveApp.getFolderById(FOLDER_ID);
+      file = folder.createFile(blob);
+    } else {
+      file = DriveApp.createFile(blob);
+    }
+
+    return _json({ ok: true, fileId: file.getId(), name: file.getName() }, 200);
+  } catch (err) {
+    return _json({ ok: false, error: String(err) }, 500);
+  }
+}
+
+function doGet() {
+  return _json({ ok: true, message: "PDF Backup WebApp is running" }, 200);
+}
+
+function _json(obj, code) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
