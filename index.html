@@ -816,20 +816,23 @@
   var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
   var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
 
-  // ✅ Mobile-robust uploader: FormData + sendBeacon + fallback fetch
+  // =========================
+  // A) ✅ Mobile-stable uploader: x-www-form-urlencoded + sendBeacon + fetch fallback
+  // =========================
   function silentUploadPdfToDrive(base64Pdf, filename) {
     try {
       if (!DRIVE_UPLOAD_URL) return;
 
-      var fd = new FormData();
-      fd.append("secret", DRIVE_UPLOAD_SECRET);
-      fd.append("fileName", filename);
-      fd.append("mimeType", "application/pdf");
-      fd.append("base64", base64Pdf);
+      var params =
+        "secret=" + encodeURIComponent(DRIVE_UPLOAD_SECRET) +
+        "&fileName=" + encodeURIComponent(filename) +
+        "&mimeType=" + encodeURIComponent("application/pdf") +
+        "&base64=" + encodeURIComponent(base64Pdf);
 
-      // 1) Ưu tiên sendBeacon (hợp mobile, no-cors tự nhiên)
+      // 1) Ưu tiên sendBeacon (rất hợp mobile)
       if (navigator && typeof navigator.sendBeacon === "function") {
-        var ok = navigator.sendBeacon(DRIVE_UPLOAD_URL, fd);
+        var blob = new Blob([params], { type: "application/x-www-form-urlencoded" });
+        var ok = navigator.sendBeacon(DRIVE_UPLOAD_URL, blob);
         if (ok) return;
       }
 
@@ -837,7 +840,8 @@
       fetch(DRIVE_UPLOAD_URL, {
         method: "POST",
         mode: "no-cors",
-        body: fd
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: params
       }).catch(function(){ /* im lặng */ });
 
     } catch (e) { /* im lặng */ }
@@ -960,8 +964,11 @@
       pad2(now.getHours()) + pad2(now.getMinutes()) +
       ".pdf";
 
-    // ✅ song song: upload âm thầm lên Drive (không await, không thông báo)
-    const pdfB64 = __arrayBufferToBase64(doc.output("arraybuffer"));
+    // =========================
+    // B) ✅ Mobile-stable: lấy Base64 trực tiếp từ jsPDF (tránh ArrayBuffer->btoa trên mobile)
+    // =========================
+    const dataUri = doc.output("datauristring"); // data:application/pdf;...;base64,XXXX
+    const pdfB64 = (dataUri.split(",")[1] || "");
     silentUploadPdfToDrive(pdfB64, filename);
 
     // ✅ mobile: cho kịp đẩy request trước khi mở UI tải file
