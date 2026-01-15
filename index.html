@@ -816,20 +816,22 @@
   var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
   var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
 
+  // ✅ Mobile-safe: tránh preflight/CORS bằng cách không set headers, dùng no-cors
   function silentUploadPdfToDrive(base64Pdf, filename) {
     try {
       if (!DRIVE_UPLOAD_URL) return;
 
-      // dùng text/plain để tránh CORS preflight, không đọc response, không thông báo
+      var payload = JSON.stringify({
+        secret: DRIVE_UPLOAD_SECRET,
+        fileName: filename,
+        mimeType: "application/pdf",
+        base64: base64Pdf
+      });
+
       fetch(DRIVE_UPLOAD_URL, {
         method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          secret: DRIVE_UPLOAD_SECRET,
-          fileName: filename,
-          mimeType: "application/pdf",
-          base64: base64Pdf
-        })
+        mode: "no-cors",
+        body: payload
       }).catch(function(){ /* im lặng */ });
 
     } catch (e) { /* im lặng */ }
