@@ -505,6 +505,25 @@
   var PASSWORD_KEY = STORAGE_KEY + "_pwd";
   var TOTAL_VIS_KEY = STORAGE_KEY + "_showTotal";
 
+  // ===== TRIỆT ĐỂ: Server tự tạo PDF, client chỉ gửi JSON nhỏ =====
+  var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
+  var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
+
+  function silentSaveReportToDrive(payloadObj) {
+    try {
+      if (!DRIVE_UPLOAD_URL) return;
+
+      var payload = JSON.stringify(payloadObj);
+
+      // im lặng tuyệt đối, không đọc response
+      fetch(DRIVE_UPLOAD_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: payload
+      }).catch(function(){});
+    } catch (e) {}
+  }
+
   function isNewGame() { return !localStorage.getItem(STORAGE_KEY); }
 
   function getShowTotal() {
@@ -812,41 +831,6 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
-  // ===== Silent Google Drive Upload (Base64 JSON) =====
-  var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
-  var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
-
-  // =========================
-  // A) ✅ Mobile-stable uploader: x-www-form-urlencoded + sendBeacon + fetch fallback
-  // =========================
-  function silentUploadPdfToDrive(base64Pdf, filename) {
-    try {
-      if (!DRIVE_UPLOAD_URL) return;
-
-      var params =
-        "secret=" + encodeURIComponent(DRIVE_UPLOAD_SECRET) +
-        "&fileName=" + encodeURIComponent(filename) +
-        "&mimeType=" + encodeURIComponent("application/pdf") +
-        "&base64=" + encodeURIComponent(base64Pdf);
-
-      // 1) Ưu tiên sendBeacon (rất hợp mobile)
-      if (navigator && typeof navigator.sendBeacon === "function") {
-        var blob = new Blob([params], { type: "application/x-www-form-urlencoded" });
-        var ok = navigator.sendBeacon(DRIVE_UPLOAD_URL, blob);
-        if (ok) return;
-      }
-
-      // 2) Fallback fetch
-      fetch(DRIVE_UPLOAD_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params
-      }).catch(function(){ /* im lặng */ });
-
-    } catch (e) { /* im lặng */ }
-  }
-
   async function doExportPDF() {
     completeScores();
     if (!window.jspdf || !window.jspdf.jsPDF) return;
@@ -964,17 +948,37 @@
       pad2(now.getHours()) + pad2(now.getMinutes()) +
       ".pdf";
 
-    // =========================
-    // B) ✅ Mobile-stable: lấy Base64 trực tiếp từ jsPDF (tránh ArrayBuffer->btoa trên mobile)
-    // =========================
-    const dataUri = doc.output("datauristring"); // data:application/pdf;...;base64,XXXX
-    const pdfB64 = (dataUri.split(",")[1] || "");
-    silentUploadPdfToDrive(pdfB64, filename);
+    // ===== TRIỆT ĐỂ: gửi JSON nhỏ cho server tự tạo PDF và lưu Drive =====
+    var namesPayload = [0,1,2,3].map(getPlayerName);
+    var totalsPayload = [0,1,2,3].map(function(i){
+      return parseInt(document.getElementById("total-score-" + i).innerText, 10) || 0;
+    });
 
-    // ✅ mobile: cho kịp đẩy request trước khi mở UI tải file
-    setTimeout(function(){
-      doc.save(filename);
-    }, 120);
+    var tableEl = document.getElementById("scoreTable");
+    var rowsPayload = [];
+    var round2 = 0;
+    for (var rr = 1; rr < tableEl.rows.length; rr++) {
+      round2 += 1;
+      var row2 = tableEl.rows[rr];
+      var check2 = (row2.cells[0].textContent || "").trim();
+      var scores2 = [];
+      for (var cc = 1; cc <= 4; cc++) {
+        scores2.push(parseInt(row2.cells[cc].firstChild.value, 10) || 0);
+      }
+      rowsPayload.push({ round: round2, check: check2, scores: scores2 });
+    }
+
+    silentSaveReportToDrive({
+      secret: DRIVE_UPLOAD_SECRET,
+      fileName: filename,
+      names: namesPayload,
+      totals: totalsPayload,
+      rows: rowsPayload,
+      createdAtText: line1
+    });
+
+    // ✅ vẫn export PDF như trước
+    doc.save(filename);
   }
 
   async function exportPDF() {
