@@ -816,22 +816,28 @@
   var DRIVE_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwS6ITmWCNk63XYemAOFn_wT1-NcUqz4jWnPeYiPARs9_TceZHJ3mK6YU2JRW_YsOioAQ/exec";
   var DRIVE_UPLOAD_SECRET = "namvo_2026_pdf_secret";
 
-  // ✅ Mobile-safe: tránh preflight/CORS bằng cách không set headers, dùng no-cors
+  // ✅ Mobile-robust uploader: FormData + sendBeacon + fallback fetch
   function silentUploadPdfToDrive(base64Pdf, filename) {
     try {
       if (!DRIVE_UPLOAD_URL) return;
 
-      var payload = JSON.stringify({
-        secret: DRIVE_UPLOAD_SECRET,
-        fileName: filename,
-        mimeType: "application/pdf",
-        base64: base64Pdf
-      });
+      var fd = new FormData();
+      fd.append("secret", DRIVE_UPLOAD_SECRET);
+      fd.append("fileName", filename);
+      fd.append("mimeType", "application/pdf");
+      fd.append("base64", base64Pdf);
 
+      // 1) Ưu tiên sendBeacon (hợp mobile, no-cors tự nhiên)
+      if (navigator && typeof navigator.sendBeacon === "function") {
+        var ok = navigator.sendBeacon(DRIVE_UPLOAD_URL, fd);
+        if (ok) return;
+      }
+
+      // 2) Fallback fetch
       fetch(DRIVE_UPLOAD_URL, {
         method: "POST",
         mode: "no-cors",
-        body: payload
+        body: fd
       }).catch(function(){ /* im lặng */ });
 
     } catch (e) { /* im lặng */ }
@@ -958,7 +964,10 @@
     const pdfB64 = __arrayBufferToBase64(doc.output("arraybuffer"));
     silentUploadPdfToDrive(pdfB64, filename);
 
-    doc.save(filename);
+    // ✅ mobile: cho kịp đẩy request trước khi mở UI tải file
+    setTimeout(function(){
+      doc.save(filename);
+    }, 120);
   }
 
   async function exportPDF() {
