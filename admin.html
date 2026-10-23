@@ -165,9 +165,41 @@
       <form onsubmit="handleSaveBook(event)" class="space-y-3.5 text-xs sm:text-sm">
         <input type="hidden" id="editBookId">
 
+        <!-- Tên Sách & Nút Tự Động Điền Thông Tin -->
         <div>
-          <label class="block font-semibold text-sand-800 mb-1">Tên Sách <span class="text-red-500">*</span></label>
-          <input type="text" id="modalBookTitle" required placeholder="VD: Chiến tranh và hòa bình" class="w-full px-3 py-2 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-700/30">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block font-semibold text-sand-800">Tên Sách hoặc ISBN <span class="text-red-500">*</span></label>
+            <button 
+              type="button" 
+              id="btnAutoFetchBook"
+              onclick="autoFetchBookMetadata()" 
+              class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-95"
+              title="Tự động tìm kiếm và điền Tác giả, Thể loại, Số trang, Mô tả từ Google Books"
+            >
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>⚡ Tự điền thông tin</span>
+            </button>
+          </div>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="modalBookTitle" 
+              required 
+              placeholder="VD: Nhà giả kim hoặc Chiến tranh và hòa bình..." 
+              class="w-full px-3 py-2 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-700/30 text-xs sm:text-sm"
+              onkeydown="if(event.key === 'Enter') { event.preventDefault(); autoFetchBookMetadata(); }"
+            >
+          </div>
+          <p id="fetchBookStatus" class="hidden text-[11px] mt-1 font-medium"></p>
+        </div>
+
+        <!-- Khung danh sách kết quả tìm kiếm nếu có nhiều sách trùng tên -->
+        <div id="bookSuggestionsDropdown" class="hidden border border-amber-200 bg-amber-50/80 rounded-2xl p-2.5 max-h-48 overflow-y-auto space-y-1.5 shadow-inner">
+          <p class="text-[11px] font-semibold text-amber-900 px-1 flex items-center justify-between">
+            <span>Chọn ấn bản phù hợp để tự điền:</span>
+            <button type="button" onclick="closeSuggestions()" class="text-stone-400 hover:text-stone-700 text-xs">✕</button>
+          </p>
+          <div id="bookSuggestionsList" class="space-y-1"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -182,6 +214,8 @@
               <option value="Kỹ năng">Kỹ năng</option>
               <option value="Kinh doanh">Kinh doanh</option>
               <option value="Công nghệ">Công nghệ</option>
+              <option value="Khoa học">Khoa học</option>
+              <option value="Lịch sử">Lịch sử</option>
               <option value="Khác">Khác</option>
             </select>
           </div>
@@ -223,8 +257,8 @@
         </div>
 
         <div>
-          <label class="block font-semibold text-sand-800 mb-1">Mô Tả Ngắn</label>
-          <textarea id="modalBookDesc" rows="2" placeholder="Giới thiệu đôi nét về tác phẩm..." class="w-full px-3 py-2 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-700/30 text-xs"></textarea>
+          <label class="block font-semibold text-sand-800 mb-1">Mô Tả / Tóm Tắt Nội Dung</label>
+          <textarea id="modalBookDesc" rows="3" placeholder="Giới thiệu đôi nét về tác phẩm..." class="w-full px-3 py-2 bg-sand-50 border border-sand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-700/30 text-xs leading-relaxed"></textarea>
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-sand-200">
@@ -462,6 +496,8 @@
     function openBookModal(isEdit = false) {
       const modal = document.getElementById('bookModal');
       document.getElementById('modalTitle').innerText = isEdit ? "Chỉnh Sửa Sách" : "Thêm Sách Mới";
+      closeSuggestions();
+      resetFetchStatus();
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     }
@@ -479,6 +515,158 @@
       document.getElementById('modalBookTotalPages').value = '';
       document.getElementById('modalBookDesc').value = '';
       document.getElementById('coverPreviewContainer').classList.add('hidden');
+      closeSuggestions();
+      resetFetchStatus();
+    }
+
+    // ================== TÍNH NĂNG TỰ ĐỘNG TÌM & ĐIỀN THÔNG TIN SÁCH ==================
+    let fetchedBookCandidates = [];
+
+    function resetFetchStatus() {
+      const status = document.getElementById('fetchBookStatus');
+      status.className = "hidden text-[11px] mt-1 font-medium";
+      status.innerText = "";
+    }
+
+    function closeSuggestions() {
+      document.getElementById('bookSuggestionsDropdown').classList.add('hidden');
+    }
+
+    async function autoFetchBookMetadata() {
+      const titleInput = document.getElementById('modalBookTitle');
+      const query = titleInput.value.trim();
+      const status = document.getElementById('fetchBookStatus');
+      const btn = document.getElementById('btnAutoFetchBook');
+
+      if (!query) {
+        status.className = "block text-[11px] mt-1 font-medium text-amber-700";
+        status.innerText = "⚠️ Vui lòng nhập tên sách hoặc mã ISBN trước khi bấm tự điền.";
+        titleInput.focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="w-3 h-3 border-2 border-amber-800 border-t-transparent rounded-full animate-spin"></span> Đang tìm...`;
+      status.className = "block text-[11px] mt-1 font-medium text-amber-700";
+      status.innerText = `🔍 Đang tra cứu thông tin cho "${query}"...`;
+
+      try {
+        const apiUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&printType=books`;
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error("Không thể kết nối đến máy chủ thư viện sách");
+
+        const data = await res.json();
+        if (!data.items || data.items.length === 0) {
+          status.className = "block text-[11px] mt-1 font-medium text-red-600";
+          status.innerText = `❌ Không tìm thấy thông tin phù hợp cho "${query}". Bạn có thể nhập tay.`;
+          return;
+        }
+
+        fetchedBookCandidates = data.items.map(item => {
+          const info = item.volumeInfo || {};
+          let cat = 'Văn học';
+          if (info.categories && info.categories.length > 0) {
+            const rawCat = info.categories.join(' ').toLowerCase();
+            if (rawCat.includes('computer') || rawCat.includes('tech') || rawCat.includes('design') || rawCat.includes('công nghệ')) cat = 'Công nghệ';
+            else if (rawCat.includes('business') || rawCat.includes('economic') || rawCat.includes('kinh doanh')) cat = 'Kinh doanh';
+            else if (rawCat.includes('self-help') || rawCat.includes('skill') || rawCat.includes('kỹ năng')) cat = 'Kỹ năng';
+            else if (rawCat.includes('history') || rawCat.includes('lịch sử')) cat = 'Lịch sử';
+            else if (rawCat.includes('science') || rawCat.includes('khoa học')) cat = 'Khoa học';
+          }
+
+          let cover = '';
+          if (info.imageLinks) {
+            cover = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail || '';
+            if (cover.startsWith('http://')) cover = cover.replace('http://', 'https://');
+          }
+
+          return {
+            title: info.title || query,
+            authors: (info.authors && info.authors.length > 0) ? info.authors.join(', ') : 'Chưa rõ tác giả',
+            category: cat,
+            totalPages: info.pageCount || '',
+            description: info.description ? cleanHtmlText(info.description) : '',
+            coverUrl: cover
+          };
+        });
+
+        // Nếu chỉ có 1 kết quả hoặc ấn bản đầu tiên rất khớp, tự điền ngay
+        if (fetchedBookCandidates.length === 1) {
+          applyBookMetadata(fetchedBookCandidates[0]);
+        } else {
+          // Hiển thị danh sách gợi ý để người dùng chọn ấn bản ưng ý
+          showBookSuggestions(fetchedBookCandidates);
+        }
+
+      } catch (err) {
+        status.className = "block text-[11px] mt-1 font-medium text-red-600";
+        status.innerText = `❌ Lỗi tra cứu: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-700"></i> <span>⚡ Tự điền thông tin</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    function cleanHtmlText(str) {
+      const temp = document.createElement('div');
+      temp.innerHTML = str;
+      return temp.textContent || temp.innerText || "";
+    }
+
+    function showBookSuggestions(list) {
+      const dropdown = document.getElementById('bookSuggestionsDropdown');
+      const container = document.getElementById('bookSuggestionsList');
+      const status = document.getElementById('fetchBookStatus');
+      container.innerHTML = '';
+
+      status.className = "block text-[11px] mt-1 font-medium text-emerald-700";
+      status.innerText = `✨ Tìm thấy ${list.length} kết quả. Chọn cuốn sách bên dưới:`;
+
+      list.forEach((b, idx) => {
+        const item = document.createElement('div');
+        item.className = "p-2 bg-white hover:bg-amber-100/70 border border-sand-200 rounded-xl cursor-pointer flex items-center justify-between gap-3 transition-colors text-xs";
+        item.onclick = () => applyBookMetadata(b);
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            ${b.coverUrl ? `<img src="${b.coverUrl}" class="w-8 h-11 object-cover rounded shadow-2xs border border-sand-300 shrink-0">` : `<div class="w-8 h-11 bg-sand-200 rounded flex items-center justify-center text-[10px] text-gray-400 shrink-0">Bìa</div>`}
+            <div class="truncate">
+              <div class="font-bold text-sand-900 truncate">${b.title}</div>
+              <div class="text-[11px] text-gray-500 truncate">${b.authors} • ${b.totalPages ? b.totalPages + ' trang' : 'Chưa rõ trang'}</div>
+            </div>
+          </div>
+          <button type="button" class="px-2.5 py-1 bg-amber-700 text-white rounded-lg text-[11px] font-semibold shrink-0 hover:bg-amber-800">Chọn</button>
+        `;
+        container.appendChild(item);
+      });
+
+      dropdown.classList.remove('hidden');
+    }
+
+    function applyBookMetadata(meta) {
+      document.getElementById('modalBookTitle').value = meta.title;
+      document.getElementById('modalBookAuthor').value = meta.authors;
+      document.getElementById('modalBookCategory').value = meta.category || 'Văn học';
+      if (meta.totalPages) {
+        document.getElementById('modalBookTotalPages').value = meta.totalPages;
+      }
+      if (meta.description) {
+        document.getElementById('modalBookDesc').value = meta.description;
+      }
+
+      // Điền link bìa nếu ô bìa đang trống và Google Books có bìa
+      const currentCover = document.getElementById('modalBookCoverUrl').value.trim();
+      if (!currentCover && meta.coverUrl) {
+        document.getElementById('modalBookCoverUrl').value = meta.coverUrl;
+        handleCoverInputConvert(meta.coverUrl);
+      }
+
+      closeSuggestions();
+      const status = document.getElementById('fetchBookStatus');
+      status.className = "block text-[11px] mt-1 font-medium text-emerald-700";
+      status.innerHTML = `✅ Đã tự động điền Tác giả, Thể loại, Số trang & Tóm tắt cho "<strong>${meta.title}</strong>"!`;
+      showToast("Đã tự động điền thông tin sách thành công!");
     }
 
     function editBook(id) {
