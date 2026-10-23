@@ -116,15 +116,6 @@
             <span id="inputUnitBadge" class="text-xs font-semibold px-2.5 py-1.5 bg-slate-200 text-slate-600 rounded-xl">giây</span>
           </div>
         </div>
-
-        <!-- Mẫu nhanh thường dùng -->
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <span id="quickPresetLabel" class="text-xs font-medium text-slate-500">Mẫu chọn nhanh:</span>
-          <button type="button" class="quick-btn active:scale-95 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 font-medium px-3 py-2 rounded-lg border border-slate-200 transition-all" data-val="3600" data-key="1h">1 Giờ (3,600s)</button>
-          <button type="button" class="quick-btn active:scale-95 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 font-medium px-3 py-2 rounded-lg border border-slate-200 transition-all" data-val="86400" data-key="1d">1 Ngày (86,400s)</button>
-          <button type="button" class="quick-btn active:scale-95 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 font-medium px-3 py-2 rounded-lg border border-slate-200 transition-all" data-val="604800" data-key="1w">1 Tuần (604,800s)</button>
-          <button type="button" class="quick-btn active:scale-95 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 font-medium px-3 py-2 rounded-lg border border-slate-200 transition-all" data-val="1000000" data-key="1m">1 Triệu giây</button>
-        </div>
       </div>
 
       <!-- Kết quả chính (Bây giờ quy đổi ra GIỜ) -->
@@ -208,66 +199,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Bảng thông tin tham khảo & Bảng tính nhẩm -->
-    <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-        <h4 id="calcGuideTitle" class="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
-          <i class="fa-solid fa-circle-question text-indigo-600"></i>
-          Cách tính số giây ra giờ
-        </h4>
-        <div id="calcGuideBody" class="text-xs sm:text-sm text-slate-600 space-y-2">
-          <p>Mỗi đơn vị thời gian có quy ước chuẩn:</p>
-          <ul class="list-disc list-inside space-y-1 text-slate-500 font-mono text-xs">
-            <li>1 phút = 60 giây</li>
-            <li>1 giờ = 60 phút = 60 × 60 = <strong>3,600 giây</strong></li>
-            <li>1 ngày = 24 giờ = <strong>86,400 giây</strong></li>
-          </ul>
-          <p class="pt-2 text-slate-700">
-            👉 Do đó: <strong>Số giờ = Số giây ÷ 3,600</strong>
-          </p>
-        </div>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-        <h4 id="tableTitle" class="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
-          <i class="fa-solid fa-table-list text-indigo-600"></i>
-          Bảng quy đổi mốc thời gian nhanh
-        </h4>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead>
-              <tr class="border-b border-slate-100 text-slate-400">
-                <th id="thColSeconds" class="pb-2 font-medium">Số Giây</th>
-                <th id="thColConverted" class="pb-2 font-medium">Quy đổi ra giờ & ngày</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody" class="divide-y divide-slate-100 font-medium text-slate-600">
-              <tr>
-                <td class="py-1.5 font-mono">1,800 s</td>
-                <td class="py-1.5 text-indigo-600">0.5 giờ (30 phút)</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 font-mono">3,600 s</td>
-                <td class="py-1.5 text-indigo-600">1.0 giờ</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 font-mono">86,400 s</td>
-                <td class="py-1.5 text-indigo-600">24.0 giờ (1 ngày)</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 font-mono">172,800 s</td>
-                <td class="py-1.5 text-indigo-600">48.0 giờ (2 ngày)</td>
-              </tr>
-              <tr>
-                <td class="py-1.5 font-mono">604,800 s</td>
-                <td class="py-1.5 text-indigo-600">168.0 giờ (7 ngày)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   </main>
 
   <!-- Footer -->
@@ -287,13 +218,6 @@
         inputLabel: "Nhập số giây:",
         inputPlaceholder: "Ví dụ: 3600, 86400, 1000000...",
         inputUnitBadge: "giây",
-        quickPresetLabel: "Mẫu chọn nhanh:",
-        quickPresets: {
-          "1h": "1 Giờ (3,600s)",
-          "1d": "1 Ngày (86,400s)",
-          "1w": "1 Tuần (604,800s)",
-          "1m": "1 Triệu giây"
-        },
         mainResultTitle: "Kết quả chính xác quy đổi ra giờ",
         mainUnitText: "giờ",
         copyBtnText: "Sao chép",
@@ -304,28 +228,6 @@
         boxLabelMinutes: "Phút",
         boxLabelSeconds: "Giây dư",
         copyHumanBtnText: "Sao chép chuỗi",
-        calcGuideTitle: "Cách tính số giây ra giờ",
-        calcGuideBody: `
-          <p>Mỗi đơn vị thời gian có quy ước chuẩn:</p>
-          <ul class="list-disc list-inside space-y-1 text-slate-500 font-mono text-xs">
-            <li>1 phút = 60 giây</li>
-            <li>1 giờ = 60 phút = 60 × 60 = <strong>3,600 giây</strong></li>
-            <li>1 ngày = 24 giờ = <strong>86,400 giây</strong></li>
-          </ul>
-          <p class="pt-2 text-slate-700">
-            👉 Do đó: <strong>Số giờ = Số giây ÷ 3,600</strong>
-          </p>
-        `,
-        tableTitle: "Bảng quy đổi mốc thời gian nhanh",
-        thColSeconds: "Số Giây",
-        thColConverted: "Quy đổi ra giờ & ngày",
-        tableRows: [
-          { s: "1,800 s", r: "0.5 giờ (30 phút)" },
-          { s: "3,600 s", r: "1.0 giờ" },
-          { s: "86,400 s", r: "24.0 giờ (1 ngày)" },
-          { s: "172,800 s", r: "48.0 giờ (2 ngày)" },
-          { s: "604,800 s", r: "168.0 giờ (7 ngày)" }
-        ],
         footerText: "© Công cụ tính toán & chuyển đổi thời gian trực tuyến tiện lợi.",
         toastCopied: "Đã sao chép vào bộ nhớ đệm!",
         toastManual: "Vui lòng chọn và chép thủ công.",
@@ -333,8 +235,7 @@
         dayUnit: "ngày",
         hourUnit: "giờ",
         minUnit: "phút",
-        secUnit: "giây",
-        selectedToast: "Đã chọn"
+        secUnit: "giây"
       },
       en: {
         appSubtitle: "Convert Seconds to Hours & Detailed Time",
@@ -344,13 +245,6 @@
         inputLabel: "Enter number of seconds:",
         inputPlaceholder: "E.g. 3600, 86400, 1000000...",
         inputUnitBadge: "seconds",
-        quickPresetLabel: "Quick presets:",
-        quickPresets: {
-          "1h": "1 Hour (3,600s)",
-          "1d": "1 Day (86,400s)",
-          "1w": "1 Week (604,800s)",
-          "1m": "1 Million sec"
-        },
         mainResultTitle: "Exact Result Converted to Hours",
         mainUnitText: "hours",
         copyBtnText: "Copy",
@@ -361,28 +255,6 @@
         boxLabelMinutes: "Minutes",
         boxLabelSeconds: "Remaining Sec",
         copyHumanBtnText: "Copy String",
-        calcGuideTitle: "How to Calculate Seconds to Hours",
-        calcGuideBody: `
-          <p>Standard unit conversions:</p>
-          <ul class="list-disc list-inside space-y-1 text-slate-500 font-mono text-xs">
-            <li>1 minute = 60 seconds</li>
-            <li>1 hour = 60 minutes = 60 × 60 = <strong>3,600 seconds</strong></li>
-            <li>1 day = 24 hours = <strong>86,400 seconds</strong></li>
-          </ul>
-          <p class="pt-2 text-slate-700">
-            👉 Formula: <strong>Hours = Seconds ÷ 3,600</strong>
-          </p>
-        `,
-        tableTitle: "Quick Time Reference Table",
-        thColSeconds: "Seconds",
-        thColConverted: "Hours & Days",
-        tableRows: [
-          { s: "1,800 s", r: "0.5 hours (30 mins)" },
-          { s: "3,600 s", r: "1.0 hour" },
-          { s: "86,400 s", r: "24.0 hours (1 day)" },
-          { s: "172,800 s", r: "48.0 hours (2 days)" },
-          { s: "604,800 s", r: "168.0 hours (7 days)" }
-        ],
         footerText: "© Online time calculator & conversion tool.",
         toastCopied: "Copied to clipboard!",
         toastManual: "Please copy manually.",
@@ -390,8 +262,7 @@
         dayUnit: "days",
         hourUnit: "hours",
         minUnit: "minutes",
-        secUnit: "seconds",
-        selectedToast: "Selected"
+        secUnit: "seconds"
       }
     };
 
@@ -408,7 +279,6 @@
     const humanReadableText = document.getElementById('humanReadableText');
     const copyResultBtn = document.getElementById('copyResultBtn');
     const copyHumanTextBtn = document.getElementById('copyHumanTextBtn');
-    const quickButtons = document.querySelectorAll('.quick-btn');
     const formulaExplanation = document.getElementById('formulaExplanation');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
@@ -422,7 +292,6 @@
     const mainDesc = document.getElementById('mainDesc');
     const inputLabel = document.getElementById('inputLabel');
     const inputUnitBadge = document.getElementById('inputUnitBadge');
-    const quickPresetLabel = document.getElementById('quickPresetLabel');
     const mainResultTitle = document.getElementById('mainResultTitle');
     const mainUnitText = document.getElementById('mainUnitText');
     const copyBtnText = document.getElementById('copyBtnText');
@@ -432,12 +301,6 @@
     const boxLabelMinutes = document.getElementById('boxLabelMinutes');
     const boxLabelSeconds = document.getElementById('boxLabelSeconds');
     const copyHumanBtnText = document.getElementById('copyHumanBtnText');
-    const calcGuideTitle = document.getElementById('calcGuideTitle');
-    const calcGuideBody = document.getElementById('calcGuideBody');
-    const tableTitle = document.getElementById('tableTitle');
-    const thColSeconds = document.getElementById('thColSeconds');
-    const thColConverted = document.getElementById('thColConverted');
-    const tableBody = document.getElementById('tableBody');
     const footerText = document.getElementById('footerText');
 
     const SECONDS_IN_DAY = 86400;
@@ -529,14 +392,6 @@
       inputLabel.textContent = dict.inputLabel;
       secondsInput.placeholder = dict.inputPlaceholder;
       inputUnitBadge.textContent = dict.inputUnitBadge;
-      quickPresetLabel.textContent = dict.quickPresetLabel;
-
-      quickButtons.forEach(btn => {
-        const key = btn.getAttribute('data-key');
-        if (dict.quickPresets[key]) {
-          btn.textContent = dict.quickPresets[key];
-        }
-      });
 
       mainResultTitle.textContent = dict.mainResultTitle;
       mainUnitText.textContent = dict.mainUnitText;
@@ -547,18 +402,6 @@
       boxLabelMinutes.textContent = dict.boxLabelMinutes;
       boxLabelSeconds.textContent = dict.boxLabelSeconds;
       copyHumanBtnText.textContent = dict.copyHumanBtnText;
-      calcGuideTitle.innerHTML = `<i class="fa-solid fa-circle-question text-indigo-600"></i> ${dict.calcGuideTitle}`;
-      calcGuideBody.innerHTML = dict.calcGuideBody;
-      tableTitle.innerHTML = `<i class="fa-solid fa-table-list text-indigo-600"></i> ${dict.tableTitle}`;
-      thColSeconds.textContent = dict.thColSeconds;
-      thColConverted.textContent = dict.thColConverted;
-
-      tableBody.innerHTML = dict.tableRows.map(row => `
-        <tr>
-          <td class="py-1.5 font-mono">${row.s}</td>
-          <td class="py-1.5 text-indigo-600">${row.r}</td>
-        </tr>
-      `).join('');
 
       footerText.textContent = dict.footerText;
       calculate();
@@ -646,17 +489,6 @@
       secondsInput.value = '';
       calculate();
       secondsInput.focus();
-    });
-
-    quickButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const val = btn.getAttribute('data-val');
-        secondsInput.value = val;
-        calculate();
-        const dict = translations[currentLang];
-        showToast(`${dict.selectedToast}: ${Number(val).toLocaleString()} ${dict.secUnit}`);
-      });
     });
 
     // Sao chép số giờ thập phân
